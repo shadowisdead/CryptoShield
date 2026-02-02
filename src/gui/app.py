@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from encryption.encryptor import Encryptor
+from encryption.decryptor import Decryptor
 import os
 
 class CryptoShieldApp:
@@ -171,9 +172,26 @@ class CryptoShieldApp:
 
     def decrypt_file(self):
         if not self.selected_file:
-            messagebox.showerror("Error", "Please select a file first!")
+            messagebox.showerror("Error", "Please select a file first!!!")
             return
-        self.update_status("Decryption will be added next")
+        password = self.password_entry.get()
+
+        if not password:
+            messagebox.showerror("Error", "Please enter a password!")
+            return
+
+        try:
+            decryptor = Decryptor(password)
+            decrypted_path = decryptor.decrypt_file(self.selected_file)
+
+            self.update_status("File decrypted successfully")
+            messagebox.showinfo(
+                "Success",
+                f"Decrypted file saved as:\n{decrypted_path}"
+            )
+
+        except Exception as e:
+            messagebox.showerror("Error", "Incorrect password or corrupted file!")
 
     def verify_file(self):
         if not self.selected_file:
