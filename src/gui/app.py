@@ -71,6 +71,7 @@ class CryptoShieldApp:
         )
         select_btn.pack()
 
+
         pass_frame = tk.LabelFrame(
             main_frame,
             text=" Security ",
@@ -98,13 +99,14 @@ class CryptoShieldApp:
             fg="black"
         )
         self.password_strength_label.pack(pady=5)
-
+        
         action_frame = tk.LabelFrame(
             self.root,
             text=" Actions ",
             padx=20,
             pady=20,
             font=("Arial", 12, "bold")
+            
         )
         action_frame.pack(pady=20)
 
@@ -139,6 +141,13 @@ class CryptoShieldApp:
             height=2,
             command=self.show_history
         ).grid(row=1, column=1, pady=10)
+        tk.Button(
+            action_frame,
+            text="Check Tampering",
+            width=20,
+            height=2,
+            command=self.check_file_tamper
+        ).grid(row=1, column=2, pady=10)
 
         self.status_label = tk.Label(
             self.root,
@@ -193,7 +202,7 @@ class CryptoShieldApp:
             encrypted_path = encryptor.encrypt_file(self.selected_file)
 
             hasher = Hasher()
-            file_hash = hasher.generate_hash(self.selected_file)
+            file_hash = hasher.generate_hash(encrypted_path)
 
             manager = FileManager()
 
@@ -214,7 +223,7 @@ class CryptoShieldApp:
             )
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror("Error", str(e))    
 
     def decrypt_file(self):
         if not self.selected_file:
@@ -239,6 +248,36 @@ class CryptoShieldApp:
 
         except Exception:
             messagebox.showerror("Error", "Incorrect password or corrupted file!")
+
+    def check_file_tamper(self):
+        if not self.selected_file:
+            messagebox.showerror("Error", "Please select a file first!")
+            return
+
+        try:
+            manager = FileManager()
+            records = manager.get_all_records()
+            filename = os.path.basename(self.selected_file)
+
+            # Find record in metadata
+            record = next((r for r in records if r["encrypted_file"] == filename), None)
+
+            if not record:
+                messagebox.showinfo("Info", "No metadata found for this file!")
+                return
+
+            hasher = Hasher()
+            current_hash = hasher.generate_hash(self.selected_file)
+
+            if current_hash == record["file_hash"]:
+                messagebox.showinfo("Safe", "File is safe ✅ No tampering detected.")
+                self.update_status("File integrity verified")
+            else:
+                messagebox.showwarning("Tampered", "⚠ File has been tampered!")
+                self.update_status("File tampering detected")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
     def verify_file(self):
         if not self.selected_file:
