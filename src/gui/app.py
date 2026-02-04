@@ -1,453 +1,467 @@
 import tkinter as tk
-from tkinter import ttk
-from tkinter import filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox
 from encryption.encryptor import Encryptor
 from encryption.decryptor import Decryptor
 from integrity.hasher import Hasher
 from core.file_manager import FileManager, FileRecord
 from datetime import datetime
-import os 
-import re 
+import os
+import re
 import threading
+
+# ----------------------------- CATPPUCCIN MOCHA THEME (Arch Rice Aesthetic) -----------------------------
+class Theme:
+    # Catppuccin Mocha - the beloved rice palette
+    DARK = {
+        "bg": "#1e1e2e",           # base
+        "bg_alt": "#181825",       # mantle
+        "card": "#313244",         # surface0
+        "card_hover": "#45475a",   # surface1
+        "border": "#45475a",
+        "text": "#cdd6f4",
+        "subtext": "#a6adc8",
+        "blue": "#89b4fa",
+        "green": "#a6e3a1",
+        "peach": "#fab387",
+        "red": "#f38ba8",
+        "lavender": "#b4befe",
+        "mauve": "#cba6f7",
+        "teal": "#94e2d5",
+    }
+    LIGHT = {
+        "bg": "#eff1f5",           # Catppuccin Latte base
+        "bg_alt": "#e6e9ef",
+        "card": "#ccd0da",
+        "card_hover": "#bcc0cc",
+        "border": "#acb0be",
+        "text": "#4c4f69",
+        "subtext": "#6c6f85",
+        "blue": "#1e66f5",
+        "green": "#40a02b",
+        "peach": "#fe640b",
+        "red": "#d20f39",
+        "lavender": "#7287fd",
+        "mauve": "#8839ef",
+        "teal": "#179299",
+    }
+
+# Font stack - mono for that rice/terminal vibe
+FONT_MONO = ("Cascadia Code", "Consolas", "JetBrains Mono", "monospace")
+FONT_UI = ("Segoe UI Variable", "Segoe UI", "SF Pro Display", "sans-serif")
+
+# ----------------------------- MAIN APP -----------------------------
 class CryptoShieldApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("CryptoShield - Secure File Encryption Tool")
-        self.root.geometry("1000x700")
-
-        x = (self.root.winfo_screenwidth() // 2) - 500
-        y = (self.root.winfo_screenheight() // 2) - 350
-        self.root.geometry(f"1000x700+{x}+{y}")
-
-        self.root.resizable(True, True)
-
+        self.root.title("CryptoShield — Secure Encryption")
+        self.root.geometry("1000x720")
+        self.root.minsize(900, 650)
         self.selected_file = ""
+        self.theme = Theme.DARK
+        self._setup_root()
+        self.setup_ui()
 
-        self.build_ui()
+    def _setup_root(self):
+        self.root.configure(bg=self.theme["bg"])
+        self.root.resizable(True, True)
+        # Subtle padding around entire app
+        self.root.option_add("*Font", (FONT_UI[0], 10))
 
-    def build_ui(self):
+    # ---------------- UI SETUP ----------------
+    def setup_ui(self):
+        self._configure_ttk_styles()
+        self._build_header()
+        self._build_main_content()
+        self._build_action_grid()
+        self._build_status_bar()
+        self._build_progress_section()
 
-        title = tk.Label(
-            self.root,
-            text="CryptoShield",
-            font=("Helvetica", 28, "bold"),
-            fg="#1f2933"
+    def _configure_ttk_styles(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        bg, card, text, blue, border = self.theme["bg"], self.theme["card"], self.theme["text"], self.theme["blue"], self.theme["border"]
+
+        style.configure("TFrame", background=bg)
+        style.configure(
+            "Custom.TFrame",
+            background=card,
         )
-        title.pack(pady=15)
-
-        subtitle = tk.Label(
-            self.root,
-            text="Secure File Encryption & Integrity Verification",
-            font=("Helvetica", 12)
+        style.configure(
+            "Accent.Horizontal.TProgressbar",
+            troughcolor=card,
+            background=blue,
+            bordercolor=border,
+            lightcolor=blue,
+            darkcolor=blue,
+            thickness=8,
         )
-        subtitle.pack(pady=5)
-
-        main_frame = tk.Frame(self.root)
-        main_frame.pack(pady=30)
-
-        file_frame = tk.LabelFrame(
-            main_frame,
-            text=" File Selection ",
-            padx=20,
-            pady=20,
-            font=("Arial", 12, "bold")
+        style.configure(
+            "Rice.Treeview",
+            background=card,
+            foreground=text,
+            fieldbackground=card,
+            bordercolor=border,
+            font=(FONT_MONO[0], 10),
         )
-        file_frame.grid(row=0, column=0, padx=20, pady=10)
+        style.configure(
+            "Rice.Treeview.Heading",
+            background=self.theme["bg_alt"],
+            foreground=self.theme["subtext"],
+            font=(FONT_MONO[0], 10, "bold"),
+        )
+        style.map(
+            "Rice.Treeview",
+            background=[("selected", blue)],
+            foreground=[("selected", self.theme["bg"])],
+        )
 
-        self.file_label = tk.Label(
-            file_frame,
+    # ---------------- HEADER (minimal rice style) ----------------
+    def _build_header(self):
+        self._header_frame = tk.Frame(self.root, bg=self.theme["bg"], height=90)
+        self._header_frame.pack(fill="x", padx=40, pady=(30, 20))
+        self._header_frame.pack_propagate(False)
+
+        tk.Label(
+            self._header_frame,
+            text="◇ CryptoShield",
+            font=(FONT_MONO[0], 26, "bold"),
+            bg=self.theme["bg"],
+            fg=self.theme["text"],
+        ).pack(anchor="w")
+        tk.Label(
+            self._header_frame,
+            text="encrypt · decrypt · verify integrity",
+            font=(FONT_UI[0], 11),
+            bg=self.theme["bg"],
+            fg=self.theme["subtext"],
+        ).pack(anchor="w")
+
+    # ---------------- MAIN CONTENT CARDS ----------------
+    def _build_main_content(self):
+        self._content_frame = tk.Frame(self.root, bg=self.theme["bg"])
+        self._content_frame.pack(fill="x", padx=40, pady=(0, 20))
+        self._content_frame.columnconfigure(0, weight=1)
+        self._content_frame.columnconfigure(1, weight=1)
+
+        # File selection card
+        self._file_card = self._create_card(self._content_frame, "file")
+        self._file_card.grid(row=0, column=0, padx=(0, 15), pady=5, sticky="nsew")
+        tk.Label(
+            self._file_card,
+            text="FILE",
+            font=(FONT_MONO[0], 10, "bold"),
+            bg=self.theme["card"],
+            fg=self.theme["subtext"],
+        ).pack(anchor="w", padx=20, pady=(20, 5))
+        self._file_label = tk.Label(
+            self._file_card,
             text="No file selected",
-            width=50,
-            wraplength=350,
-            anchor="w"
+            font=(FONT_MONO[0], 10),
+            bg=self.theme["card"],
+            fg=self.theme["text"],
+            wraplength=380,
+            justify="left",
         )
-        self.file_label.pack(pady=10)
+        self._file_label.pack(anchor="w", padx=20, pady=(0, 12), fill="x")
+        self._file_btn = self._styled_btn(self._file_card, "Browse File", self._select_file, self.theme["blue"])
+        self._file_btn.pack(anchor="w", padx=20, pady=(0, 20))
 
-        select_btn = tk.Button(
-            file_frame,
-            text="Browse File",
-            width=20,
-            command=self.select_file
+        # Password card
+        self._pass_card = self._create_card(self._content_frame, "pass")
+        self._pass_card.grid(row=0, column=1, padx=(15, 0), pady=5, sticky="nsew")
+        tk.Label(
+            self._pass_card,
+            text="SECURITY",
+            font=(FONT_MONO[0], 10, "bold"),
+            bg=self.theme["card"],
+            fg=self.theme["subtext"],
+        ).pack(anchor="w", padx=20, pady=(20, 5))
+        tk.Label(
+            self._pass_card,
+            text="Password",
+            font=(FONT_UI[0], 10),
+            bg=self.theme["card"],
+            fg=self.theme["subtext"],
+        ).pack(anchor="w", padx=20, pady=(5, 2))
+        self._pass_entry_frame = tk.Frame(self._pass_card, bg=self.theme["border"], highlightthickness=0)
+        self._pass_entry_frame.pack(fill="x", padx=20, pady=(0, 8))
+        self._pass_entry = tk.Entry(
+            self._pass_entry_frame,
+            show="●",
+            font=(FONT_MONO[0], 11),
+            bg=self.theme["bg_alt"],
+            fg=self.theme["text"],
+            insertbackground=self.theme["text"],
+            relief="flat",
+            bd=0,
         )
-        select_btn.pack()
-
-
-        pass_frame = tk.LabelFrame(
-            main_frame,
-            text=" Security ",
-            padx=20,
-            pady=20,
-            font=("Arial", 12, "bold")
+        self._pass_entry.pack(fill="x", ipady=8, ipadx=10, padx=1, pady=1)
+        self._pass_entry.bind("<KeyRelease>", self._update_password_strength)
+        self._pass_strength = tk.Label(
+            self._pass_card,
+            text="",
+            font=(FONT_MONO[0], 9),
+            bg=self.theme["card"],
+            fg=self.theme["subtext"],
         )
-        pass_frame.grid(row=0, column=1, padx=20, pady=10)
+        self._pass_strength.pack(anchor="w", padx=20, pady=(0, 12))
+        self._theme_btn = self._styled_btn(self._pass_card, "Toggle Theme", self._toggle_theme, self.theme["mauve"])
+        self._theme_btn.pack(anchor="w", padx=20, pady=(0, 20))
 
-        tk.Label(pass_frame, text="Enter Password:").pack(pady=5)
+    def _create_card(self, parent, tag):
+        f = tk.Frame(parent, bg=self.theme["card"], highlightbackground=self.theme["border"], highlightthickness=1)
+        return f
 
-        self.password_entry = tk.Entry(
-            pass_frame,
-            show="*",
-            width=30,
-            font=("Arial", 12)
-        )
-        self.password_entry.pack(pady=10)
-        self.password_entry.bind("<KeyRelease>", self.update_password_strength)
+    # ---------------- ACTION BUTTONS ----------------
+    def _build_action_grid(self):
+        self._actions_frame = tk.Frame(self.root, bg=self.theme["bg"])
+        self._actions_frame.pack(pady=(10, 20))
+        self._actions_frame.columnconfigure(0, weight=1)
+        self._actions_frame.columnconfigure(1, weight=1)
+        self._actions_frame.columnconfigure(2, weight=1)
 
-        self.password_strength_label = tk.Label(
-            pass_frame,
-            text="Password Strength: ",
-            font=("Arial", 10),
-            fg="black"
-        )
-        self.password_strength_label.pack(pady=5)
-        
-        action_frame = tk.LabelFrame(
-            self.root,
-            text=" Actions ",
-            padx=20,
-            pady=20,
-            font=("Arial", 12, "bold")
-            
-        )
-        action_frame.pack(pady=20)
+        btns = [
+            ("Encrypt", self._encrypt_with_progress, self.theme["blue"]),
+            ("Decrypt", self._decrypt_with_progress, self.theme["green"]),
+            ("Verify Hash", self._verify_file, self.theme["peach"]),
+            ("History", self._show_history, self.theme["subtext"]),
+            ("Check Tamper", self._check_file_tamper, self.theme["red"]),
+        ]
+        for i, (text, cmd, color) in enumerate(btns):
+            btn = self._styled_btn(self._actions_frame, text, cmd, color)
+            btn.grid(row=i // 3, column=i % 3, padx=10, pady=8)
 
-        tk.Button(
-            action_frame,
-            text="Encrypt File",
-            width=20,
-            height=2,
-            command=self.encrypt_with_progress
-        ).grid(row=0, column=0, padx=15, pady=10)
-
-        tk.Button(
-            action_frame,
-            text="Decrypt File",
-            width=20,
-            height=2,
-            command=self.decrypt_with_progress
-        ).grid(row=0, column=1, padx=15, pady=10)
-
-        tk.Button(
-            action_frame,
-            text="Verify Integrity",
-            width=20,
-            height=2,
-            command=self.verify_file
-        ).grid(row=0, column=2, padx=15, pady=10)
-
-        tk.Button(
-            action_frame,
-            text="View Encrypted Files",
-            width=20,
-            height=2,
-            command=self.show_history
-        ).grid(row=1, column=1, pady=10)
-        tk.Button(
-            action_frame,
-            text="Check Tampering",
-            width=20,
-            height=2,
-            command=self.check_file_tamper
-        ).grid(row=1, column=2, pady=10)
-
-        self.status_label = tk.Label(
-            self.root,
-            text="Status: Ready",
-            bd=1,
-            relief=tk.SUNKEN,
+    # ---------------- STATUS BAR (terminal prompt style) ----------------
+    def _build_status_bar(self):
+        self._status_frame = tk.Frame(self.root, bg=self.theme["bg_alt"], height=36)
+        self._status_frame.pack(fill="x", side="bottom", padx=0, pady=0)
+        self._status_frame.pack_propagate(False)
+        self._status_label = tk.Label(
+            self._status_frame,
+            text=" λ  Ready",
+            font=(FONT_MONO[0], 10),
+            bg=self.theme["bg_alt"],
+            fg=self.theme["subtext"],
             anchor="w",
-            padx=10
         )
-        self.status_label.pack(fill="x", side="bottom")
-        
-        self.progress = ttk.Progressbar(
-            self.root,
+        self._status_label.pack(side="left", padx=20, pady=8, fill="x", expand=True)
+
+    def _build_progress_section(self):
+        self._prog_frame = tk.Frame(self.root, bg=self.theme["bg"])
+        self._prog_frame.pack(fill="x", padx=40, pady=(0, 15))
+        self._progress = ttk.Progressbar(
+            self._prog_frame,
+            style="Accent.Horizontal.TProgressbar",
             orient="horizontal",
-            length=600,
-            mode="determinate"
+            length=400,
+            mode="determinate",
         )
-        self.progress.pack(pady=20)
-        
-    def encrypt_with_progress(self):
-        self.run_with_progress(
-            self.perform_encryption,
-            "Encrypting file...",
-            "Encryption completed"
-        )
-       
-    def decrypt_with_progress(self):
-        self.run_with_progress(
-            self.perform_decryption,
-            "Decrypting file...",
-            "Decryption completed"
-        )
+        self._progress.pack(fill="x", pady=5)
 
-    def check_password_strength(self, password):
+    # ---------------- STYLED BUTTON ----------------
+    def _styled_btn(self, parent, text, command, color):
+        fg_color = self.theme["text"] if color == self.theme["subtext"] else self.theme["bg"]
+        btn = tk.Button(
+            parent,
+            text=text,
+            command=command,
+            bg=color,
+            fg=fg_color,
+            activebackground=color,
+            activeforeground=fg_color,
+            relief="flat",
+            font=(FONT_MONO[0], 10, "bold"),
+            cursor="hand2",
+            bd=0,
+            padx=18,
+            pady=10,
+        )
+        # Hover: slight brighten
+        def on_enter(e):
+            r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+            bright = min(255, r + 25), min(255, g + 25), min(255, b + 25)
+            btn["bg"] = "#{:02x}{:02x}{:02x}".format(*bright)
+        def on_leave(e):
+            btn["bg"] = color
+        btn.bind("<Enter>", on_enter)
+        btn.bind("<Leave>", on_leave)
+        return btn
+
+    # ---------------- PASSWORD STRENGTH ----------------
+    def _check_password_strength(self, password):
         score = 0
+        if len(password) >= 8: score += 1
+        if re.search(r"[A-Z]", password): score += 1
+        if re.search(r"[a-z]", password): score += 1
+        if re.search(r"\d", password): score += 1
+        if re.search(r"[!@#$%^&*(),.?\":{}|<>]", password): score += 1
+        if score <= 2: return "weak", self.theme["red"]
+        elif score <= 4: return "medium", self.theme["peach"]
+        else: return "strong", self.theme["green"]
 
-        if len(password) >= 8:
-            score += 1
-        if re.search(r"[A-Z]", password):
-            score += 1
-        if re.search(r"[a-z]", password):
-            score += 1
-        if re.search(r"\d", password):
-            score += 1
-        if re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-            score += 1
-
-        if score <= 2:
-            return "Weak password, Please use a strong password!", "red"
-        elif score <= 4:
-            return "Medium", "orange"
+    def _update_password_strength(self, event=None):
+        pwd = self._pass_entry.get()
+        if pwd:
+            strength, color = self._check_password_strength(pwd)
+            self._pass_strength.config(text=f"Strength: {strength}", fg=color)
         else:
-            return "Strong", "green"
-    # ---------------- FUNCTIONS ----------------
+            self._pass_strength.config(text="")
 
-    def select_file(self):
-        self.selected_file = filedialog.askopenfilename()
-        if self.selected_file:
-            self.file_label.config(text=self.selected_file)
-            self.update_status("File selected")
+    # ---------------- FILE SELECTION ----------------
+    def _select_file(self):
+        path = filedialog.askopenfilename()
+        if path:
+            self.selected_file = path
+            short = path if len(path) <= 50 else "…" + path[-47:]
+            self._file_label.config(text=short)
+            self._update_status("File selected")
 
-    def encrypt_file(self):
-        if not self.selected_file:
-            messagebox.showerror("Error", "Please select a file first!")
-            return
+    # ---------------- ENCRYPTION / DECRYPTION ----------------
+    def _encrypt_with_progress(self):
+        self._run_with_progress(self._perform_encryption, "Encrypting...", "Encryption complete")
 
-        password = self.password_entry.get()
-        if not password:
-            messagebox.showerror("Error", "Please enter a password!")
-            return
+    def _decrypt_with_progress(self):
+        self._run_with_progress(self._perform_decryption, "Decrypting...", "Decryption complete")
 
-        try:
-            encryptor = Encryptor(password)
-            encrypted_path = encryptor.encrypt_file(self.selected_file)
-
-            hasher = Hasher()
-            file_hash = hasher.generate_hash(encrypted_path)
-
-            manager = FileManager()
-
-            record = FileRecord(
-                original_file=os.path.basename(self.selected_file),
-                encrypted_file=os.path.basename(encrypted_path),
-                file_hash=file_hash,
-                time=str(datetime.now())
-            )
-
-            manager.save_record(record)
-
-            self.update_status("File encrypted and metadata saved")
-
-            messagebox.showinfo(
-                "Success",
-                f"Encrypted file saved as:\n{encrypted_path}"
-            )
-
-        except Exception as e:
-            messagebox.showerror("Error", str(e))    
-
-    def decrypt_file(self):
-        if not self.selected_file:
-            messagebox.showerror("Error", "Please select a file first!")
-            return
-
-        password = self.password_entry.get()
-        if not password:
-            messagebox.showerror("Error", "Please enter a password!")
-            return
-
-        try:
-            decryptor = Decryptor(password)
-            decrypted_path = decryptor.decrypt_file(self.selected_file)
-
-            self.update_status("File decrypted successfully")
-
-            messagebox.showinfo(
-                "Success",
-                f"Decrypted file saved as:\n{decrypted_path}"
-            )
-
-        except Exception:
-            messagebox.showerror("Error", "Incorrect password or corrupted file!")
-
-    def check_file_tamper(self):
-        if not self.selected_file:
-            messagebox.showerror("Error", "Please select a file first!")
-            return
-
-        try:
-            manager = FileManager()
-            records = manager.get_all_records()
-            filename = os.path.basename(self.selected_file)
-
-            # Find record in metadata
-            record = next((r for r in records if r["encrypted_file"] == filename), None)
-
-            if not record:
-                messagebox.showinfo("Info", "No metadata found for this file!")
-                return
-
-            hasher = Hasher()
-            current_hash = hasher.generate_hash(self.selected_file)
-
-            if current_hash == record["file_hash"]:
-                messagebox.showinfo("Safe", "File is safe ✅ No tampering detected.")
-                self.update_status("File integrity verified")
-            else:
-                messagebox.showwarning("Tampered", "⚠ File has been tampered!")
-                self.update_status("File tampering detected")
-
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
-
-    def verify_file(self):
-        if not self.selected_file:
-            messagebox.showerror("Error", "Please select a file first!")
-            return
-
-        try:
-            hasher = Hasher()
-            file_hash = hasher.generate_hash(self.selected_file)
-
-            messagebox.showinfo(
-                "Integrity Hash",
-                f"SHA-256 Hash:\n{file_hash}"
-            )
-
-            self.update_status("Hash generated")
-
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
-
-    def show_history(self):
-        manager = FileManager()
-        records = manager.get_all_records()   # fresh load
-
-        history_window = tk.Toplevel(self.root)
-        history_window.title("Encrypted File History")
-        history_window.geometry("900x500")
-
-        columns = ("Original File", "Encrypted File", "Hash", "Time")
-
-        tree = ttk.Treeview(history_window, columns=columns, show="headings")
-
-        for col in columns:
-            tree.heading(col, text=col)
-            tree.column(col, width=200)
-
-        for record in records:
-            tree.insert(
-                "",
-                "end",
-                values=(
-                    record["original_file"],
-                    record["encrypted_file"],
-                    record["file_hash"],   # ✅ FIXED
-                    record["time"]
-                )
-            )
-
-        scrollbar = ttk.Scrollbar(
-            history_window,
-            orient="vertical",
-            command=tree.yview
-        )
-
-        tree.configure(yscroll=scrollbar.set)
-
-        tree.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-    def update_password_strength(self, event=None):
-        password = self.password_entry.get()
-        if password:
-            strength, color = self.check_password_strength(password)
-            self.password_strength_label.config(
-                text=f"Password Strength: {strength}",
-                fg=color
-            )
-        else:
-            self.password_strength_label.config(
-                text="Password Strength: ",
-                fg="black"
-            )
-
-
-    def update_status(self, message):
-        self.status_label.config(text=f"Status: {message}")
-    
-    def run_with_progress(self, task_function, start_msg, end_msg):
-
-        def task():
+    def _run_with_progress(self, task_fn, start_msg, end_msg):
+        def run():
             try:
-                self.progress["value"] = 0
-                self.update_status(start_msg)
-
-                for i in range(0, 101, 10):
-                    self.progress["value"] = i
+                self._progress["value"] = 0
+                self._update_status(start_msg)
+                for i in range(0, 101, 5):
+                    self._progress["value"] = i
                     self.root.update_idletasks()
-                    self.root.after(60)
-
-                result = task_function()
-
-                self.progress["value"] = 100
-                self.update_status(end_msg)
-
-                return result
-
+                    self.root.after(40)
+                task_fn()
+                self._progress["value"] = 100
+                self._update_status(end_msg)
             except Exception as e:
                 messagebox.showerror("Error", str(e))
+        threading.Thread(target=run, daemon=True).start()
 
-        threading.Thread(target=task, daemon=True).start()
-
-    def perform_encryption(self):
-
+    def _perform_encryption(self):
         if not self.selected_file:
-            messagebox.showerror("Error", "Select file first!")
+            messagebox.showerror("Error", "Select a file first.")
             return
-
-        password = self.password_entry.get()
-        if not password:
-            messagebox.showerror("Error", "Enter password!")
+        pwd = self._pass_entry.get()
+        if not pwd:
+            messagebox.showerror("Error", "Enter a password.")
             return
-
-        encryptor = Encryptor(password)
+        encryptor = Encryptor(pwd)
         encrypted_path = encryptor.encrypt_file(self.selected_file)
-
         hasher = Hasher()
         file_hash = hasher.generate_hash(encrypted_path)
-
         manager = FileManager()
-
         record = FileRecord(
             original_file=self.selected_file,
             encrypted_file=encrypted_path,
             file_hash=file_hash,
-            time=str(datetime.now())
+            time=str(datetime.now()),
         )
-
         manager.save_record(record)
-
         messagebox.showinfo("Success", f"Encrypted to:\n{encrypted_path}")
-    def perform_decryption(self):
 
+    def _perform_decryption(self):
         if not self.selected_file:
-            messagebox.showerror("Error", "Select file first!")
+            messagebox.showerror("Error", "Select a file first.")
             return
-
-        password = self.password_entry.get()
-        if not password:
-            messagebox.showerror("Error", "Enter password!")
+        pwd = self._pass_entry.get()
+        if not pwd:
+            messagebox.showerror("Error", "Enter a password.")
             return
-
-        decryptor = Decryptor(password)
+        decryptor = Decryptor(pwd)
         decrypted_path = decryptor.decrypt_file(self.selected_file)
-
         messagebox.showinfo("Success", f"Decrypted to:\n{decrypted_path}")
 
+    # ---------------- INTEGRITY & TAMPER ----------------
+    def _verify_file(self):
+        if not self.selected_file:
+            messagebox.showerror("Error", "Select a file first.")
+            return
+        hasher = Hasher()
+        file_hash = hasher.generate_hash(self.selected_file)
+        messagebox.showinfo("SHA-256 Hash", file_hash)
+        self._update_status("Hash generated")
 
+    def _check_file_tamper(self):
+        if not self.selected_file:
+            messagebox.showerror("Error", "Select a file first.")
+            return
+        manager = FileManager()
+        records = manager.get_all_records()
+        filename = os.path.basename(self.selected_file)
+        record = next((r for r in records if r["encrypted_file"] == filename), None)
+        if not record:
+            messagebox.showinfo("Info", "No metadata found for this file.")
+            return
+        hasher = Hasher()
+        current_hash = hasher.generate_hash(self.selected_file)
+        if current_hash == record["file_hash"]:
+            messagebox.showinfo("Safe", "No tampering detected.")
+            self._update_status("Integrity verified")
+        else:
+            messagebox.showwarning("Tampered", "File has been tampered.")
+            self._update_status("Tampering detected")
 
+    # ---------------- HISTORY WINDOW (styled) ----------------
+    def _show_history(self):
+        manager = FileManager()
+        records = manager.get_all_records()
+        win = tk.Toplevel(self.root)
+        win.title("History — CryptoShield")
+        win.geometry("900x480")
+        win.configure(bg=self.theme["bg"])
+        win.minsize(700, 400)
+
+        ttk.Style().configure("Rice.Treeview", background=self.theme["card"], foreground=self.theme["text"])
+        ttk.Style().configure("Rice.Treeview.Heading", background=self.theme["bg_alt"], foreground=self.theme["subtext"])
+
+        cols = ("Original", "Encrypted", "Hash", "Time")
+        tree = ttk.Treeview(win, columns=cols, show="headings", style="Rice.Treeview", height=15)
+        for c in cols:
+            tree.heading(c, text=c)
+            tree.column(c, width=200)
+        sb = ttk.Scrollbar(win, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=sb.set)
+        for r in records:
+            tree.insert("", "end", values=(r["original_file"], r["encrypted_file"], r["file_hash"], r["time"]))
+        tree.pack(side="left", fill="both", expand=True, padx=20, pady=20)
+        sb.pack(side="right", fill="y", pady=20)
+
+    # ---------------- STATUS ----------------
+    def _update_status(self, msg):
+        self._status_label.config(text=f" λ  {msg}")
+
+    # ---------------- THEME TOGGLE ----------------
+    def _toggle_theme(self):
+        self.theme = Theme.LIGHT if self.theme == Theme.DARK else Theme.DARK
+        self.root.configure(bg=self.theme["bg"])
+        self._header_frame.configure(bg=self.theme["bg"])
+        children = self._header_frame.winfo_children()
+        if len(children) >= 2:
+            children[0].configure(bg=self.theme["bg"], fg=self.theme["text"])
+            children[1].configure(bg=self.theme["bg"], fg=self.theme["subtext"])
+        self._content_frame.configure(bg=self.theme["bg"])
+        self._actions_frame.configure(bg=self.theme["bg"])
+        self._prog_frame.configure(bg=self.theme["bg"])
+        self._status_frame.configure(bg=self.theme["bg_alt"])
+        self._status_label.configure(bg=self.theme["bg_alt"], fg=self.theme["subtext"])
+        self._file_card.configure(bg=self.theme["card"], highlightbackground=self.theme["border"])
+        self._pass_card.configure(bg=self.theme["card"], highlightbackground=self.theme["border"])
+        self._pass_entry_frame.configure(bg=self.theme["border"])
+        self._file_label.configure(bg=self.theme["card"], fg=self.theme["text"])
+        for w in self._file_card.winfo_children() + self._pass_card.winfo_children():
+            if isinstance(w, tk.Label):
+                w.configure(bg=self.theme["card"])
+            elif isinstance(w, tk.Frame):
+                w.configure(bg=self.theme.get("border", self.theme["card"]))
+        self._pass_entry.configure(bg=self.theme["bg_alt"], fg=self.theme["text"], insertbackground=self.theme["text"])
+        self._pass_strength.configure(bg=self.theme["card"])
+        self._configure_ttk_styles()
+        self._file_btn.configure(bg=self.theme["blue"])
+        self._theme_btn.configure(bg=self.theme["mauve"])
+
+# ---------------- RUN ----------------
 def run_app():
     root = tk.Tk()
     app = CryptoShieldApp(root)
