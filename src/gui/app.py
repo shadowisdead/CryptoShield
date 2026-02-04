@@ -1,5 +1,5 @@
 import tkinter as tk
-import tkinter as ttk
+from tkinter import ttk
 from tkinter import filedialog, messagebox
 from encryption.encryptor import Encryptor
 from encryption.decryptor import Decryptor
@@ -12,13 +12,11 @@ class CryptoShieldApp:
     def __init__(self, root):
         self.root = root
         self.root.title("CryptoShield - Secure File Encryption Tool")
-        self.root.geometry("800x500")
-        self.root.update_idletasks()
-        width = 800
-        height = 500
-        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.root.winfo_screenheight() // 2) - (height // 2)
-        self.root.geometry(f"{width}x{height}+{x}+{y}")
+        self.root.geometry("1000x700")
+
+        x = (self.root.winfo_screenwidth() // 2) - 500
+        y = (self.root.winfo_screenheight() // 2) - 350
+        self.root.geometry(f"1000x700+{x}+{y}")
 
         self.root.resizable(True, True)
 
@@ -28,7 +26,6 @@ class CryptoShieldApp:
 
     def build_ui(self):
 
-        # ===== TITLE =====
         title = tk.Label(
             self.root,
             text="CryptoShield",
@@ -44,11 +41,9 @@ class CryptoShieldApp:
         )
         subtitle.pack(pady=5)
 
-        # ===== MAIN FRAME =====
         main_frame = tk.Frame(self.root)
         main_frame.pack(pady=30)
 
-        # ===== FILE SECTION =====
         file_frame = tk.LabelFrame(
             main_frame,
             text=" File Selection ",
@@ -75,7 +70,6 @@ class CryptoShieldApp:
         )
         select_btn.pack()
 
-        # ===== PASSWORD SECTION =====
         pass_frame = tk.LabelFrame(
             main_frame,
             text=" Security ",
@@ -85,8 +79,7 @@ class CryptoShieldApp:
         )
         pass_frame.grid(row=0, column=1, padx=20, pady=10)
 
-        pass_label = tk.Label(pass_frame, text="Enter Password:")
-        pass_label.pack(pady=5)
+        tk.Label(pass_frame, text="Enter Password:").pack(pady=5)
 
         self.password_entry = tk.Entry(
             pass_frame,
@@ -96,7 +89,6 @@ class CryptoShieldApp:
         )
         self.password_entry.pack(pady=10)
 
-        # ===== ACTION BUTTONS =====
         action_frame = tk.LabelFrame(
             self.root,
             text=" Actions ",
@@ -106,44 +98,38 @@ class CryptoShieldApp:
         )
         action_frame.pack(pady=20)
 
-        encrypt_btn = tk.Button(
+        tk.Button(
             action_frame,
             text="Encrypt File",
             width=20,
             height=2,
             command=self.encrypt_file
-        )
-        encrypt_btn.grid(row=0, column=0, padx=15, pady=10)
+        ).grid(row=0, column=0, padx=15, pady=10)
 
-        decrypt_btn = tk.Button(
+        tk.Button(
             action_frame,
             text="Decrypt File",
             width=20,
             height=2,
             command=self.decrypt_file
-        )
-        decrypt_btn.grid(row=0, column=1, padx=15, pady=10)
+        ).grid(row=0, column=1, padx=15, pady=10)
 
-        verify_btn = tk.Button(
+        tk.Button(
             action_frame,
             text="Verify Integrity",
             width=20,
             height=2,
             command=self.verify_file
-        )
-        verify_btn.grid(row=0, column=2, padx=15, pady=10)
-        
-        history_btn = tk.Button(
+        ).grid(row=0, column=2, padx=15, pady=10)
+
+        tk.Button(
             action_frame,
             text="View Encrypted Files",
             width=20,
             height=2,
             command=self.show_history
-        )
-        history_btn.grid(row=1, column=1, pady=10)
+        ).grid(row=1, column=1, pady=10)
 
-
-        # ===== STATUS BAR =====
         self.status_label = tk.Label(
             self.root,
             text="Status: Ready",
@@ -154,7 +140,7 @@ class CryptoShieldApp:
         )
         self.status_label.pack(fill="x", side="bottom")
 
-    # ------------------ FUNCTIONS ------------------
+    # ---------------- FUNCTIONS ----------------
 
     def select_file(self):
         self.selected_file = filedialog.askopenfilename()
@@ -168,7 +154,6 @@ class CryptoShieldApp:
             return
 
         password = self.password_entry.get()
-
         if not password:
             messagebox.showerror("Error", "Please enter a password!")
             return
@@ -177,18 +162,18 @@ class CryptoShieldApp:
             encryptor = Encryptor(password)
             encrypted_path = encryptor.encrypt_file(self.selected_file)
 
-            # Generate hash
             hasher = Hasher()
             file_hash = hasher.generate_hash(self.selected_file)
 
-            # Save metadata
             manager = FileManager()
+
             record = FileRecord(
                 original_file=os.path.basename(self.selected_file),
                 encrypted_file=os.path.basename(encrypted_path),
                 file_hash=file_hash,
                 time=str(datetime.now())
             )
+
             manager.save_record(record)
 
             self.update_status("File encrypted and metadata saved")
@@ -201,13 +186,12 @@ class CryptoShieldApp:
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
-
     def decrypt_file(self):
         if not self.selected_file:
-            messagebox.showerror("Error", "Please select a file first!!!")
+            messagebox.showerror("Error", "Please select a file first!")
             return
-        password = self.password_entry.get()
 
+        password = self.password_entry.get()
         if not password:
             messagebox.showerror("Error", "Please enter a password!")
             return
@@ -217,12 +201,13 @@ class CryptoShieldApp:
             decrypted_path = decryptor.decrypt_file(self.selected_file)
 
             self.update_status("File decrypted successfully")
+
             messagebox.showinfo(
                 "Success",
                 f"Decrypted file saved as:\n{decrypted_path}"
             )
 
-        except Exception as e:
+        except Exception:
             messagebox.showerror("Error", "Incorrect password or corrupted file!")
 
     def verify_file(self):
@@ -239,18 +224,18 @@ class CryptoShieldApp:
                 f"SHA-256 Hash:\n{file_hash}"
             )
 
-            self.update_status("Hash generated successfully")
+            self.update_status("Hash generated")
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
-            
+
     def show_history(self):
         manager = FileManager()
-        records = manager.get_all_records()
+        records = manager.get_all_records()   # fresh load
 
         history_window = tk.Toplevel(self.root)
         history_window.title("Encrypted File History")
-        history_window.geometry("800x400")
+        history_window.geometry("900x500")
 
         columns = ("Original File", "Encrypted File", "Hash", "Time")
 
@@ -258,7 +243,7 @@ class CryptoShieldApp:
 
         for col in columns:
             tree.heading(col, text=col)
-            tree.column(col, width=180)
+            tree.column(col, width=200)
 
         for record in records:
             tree.insert(
@@ -267,7 +252,7 @@ class CryptoShieldApp:
                 values=(
                     record["original_file"],
                     record["encrypted_file"],
-                    record["hash"],
+                    record["file_hash"],   # ✅ FIXED
                     record["time"]
                 )
             )
@@ -277,11 +262,12 @@ class CryptoShieldApp:
             orient="vertical",
             command=tree.yview
         )
+
         tree.configure(yscroll=scrollbar.set)
 
         tree.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-        
+
     def update_status(self, message):
         self.status_label.config(text=f"Status: {message}")
 
