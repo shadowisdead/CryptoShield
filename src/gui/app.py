@@ -3,7 +3,8 @@ from tkinter import filedialog, messagebox
 from encryption.encryptor import Encryptor
 from encryption.decryptor import Decryptor
 from integrity.hasher import Hasher
-
+from core.file_manager import FileManager, FileRecord
+from datetime import datetime
 import os
 
 class CryptoShieldApp:
@@ -152,25 +153,43 @@ class CryptoShieldApp:
 
     def encrypt_file(self):
         if not self.selected_file:
-            messagebox.showerror("Error", "Please select a file first!!!")
+            messagebox.showerror("Error", "Please select a file first!")
             return
+
         password = self.password_entry.get()
+
         if not password:
-            messagebox.showerror("Error", "Please enter a password")
+            messagebox.showerror("Error", "Please enter a password!")
             return
-        
+
         try:
             encryptor = Encryptor(password)
             encrypted_path = encryptor.encrypt_file(self.selected_file)
-            
-            self.update_status("File encrypted successfully")
-            messagebox.showinfo(
-                "Sucess",
-                f"Encrypted file saved as: \n{encrypted_path}"
+
+            # Generate hash
+            hasher = Hasher()
+            file_hash = hasher.generate_hash(self.selected_file)
+
+            # Save metadata
+            manager = FileManager()
+            record = FileRecord(
+                original_file=os.path.basename(self.selected_file),
+                encrypted_file=os.path.basename(encrypted_path),
+                file_hash=file_hash,
+                time=str(datetime.now())
             )
-            
+            manager.save_record(record)
+
+            self.update_status("File encrypted and metadata saved")
+
+            messagebox.showinfo(
+                "Success",
+                f"Encrypted file saved as:\n{encrypted_path}"
+            )
+
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
 
     def decrypt_file(self):
         if not self.selected_file:
