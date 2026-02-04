@@ -1,11 +1,12 @@
 import tkinter as tk
+import tkinter as ttk
 from tkinter import filedialog, messagebox
 from encryption.encryptor import Encryptor
 from encryption.decryptor import Decryptor
 from integrity.hasher import Hasher
 from core.file_manager import FileManager, FileRecord
 from datetime import datetime
-import os
+import os 
 
 class CryptoShieldApp:
     def __init__(self, root):
@@ -131,6 +132,16 @@ class CryptoShieldApp:
             command=self.verify_file
         )
         verify_btn.grid(row=0, column=2, padx=15, pady=10)
+        
+        history_btn = tk.Button(
+            action_frame,
+            text="View Encrypted Files",
+            width=20,
+            height=2,
+            command=self.show_history
+        )
+        history_btn.grid(row=1, column=1, pady=10)
+
 
         # ===== STATUS BAR =====
         self.status_label = tk.Label(
@@ -232,7 +243,44 @@ class CryptoShieldApp:
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
-    
+            
+    def show_history(self):
+        manager = FileManager()
+        records = manager.get_all_records()
+
+        history_window = tk.Toplevel(self.root)
+        history_window.title("Encrypted File History")
+        history_window.geometry("800x400")
+
+        columns = ("Original File", "Encrypted File", "Hash", "Time")
+
+        tree = ttk.Treeview(history_window, columns=columns, show="headings")
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=180)
+
+        for record in records:
+            tree.insert(
+                "",
+                "end",
+                values=(
+                    record["original_file"],
+                    record["encrypted_file"],
+                    record["hash"],
+                    record["time"]
+                )
+            )
+
+        scrollbar = ttk.Scrollbar(
+            history_window,
+            orient="vertical",
+            command=tree.yview
+        )
+        tree.configure(yscroll=scrollbar.set)
+
+        tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
         
     def update_status(self, message):
         self.status_label.config(text=f"Status: {message}")
