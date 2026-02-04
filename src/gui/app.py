@@ -8,6 +8,7 @@ from core.file_manager import FileManager, FileRecord
 from datetime import datetime
 import os 
 import re 
+import threading
 
 class CryptoShieldApp:
     def __init__(self, root):
@@ -115,7 +116,7 @@ class CryptoShieldApp:
             text="Encrypt File",
             width=20,
             height=2,
-            command=self.encrypt_file
+            command=self.start_encryption_thread
         ).grid(row=0, column=0, padx=15, pady=10)
 
         tk.Button(
@@ -158,6 +159,19 @@ class CryptoShieldApp:
             padx=10
         )
         self.status_label.pack(fill="x", side="bottom")
+        
+        self.progress = ttk.Progressbar(
+            self.root,
+            orient="horizontal",
+            length=600,
+            mode="determinate"
+        )
+        self.progress.pack(pady=20)
+        
+    def start_encryption_thread(self):
+        thread = threading.Thread(target=self.encrypt_file_with_progress)
+        thread.daemon=True
+        thread.start()
 
     def check_password_strength(self, password):
         score = 0
@@ -354,6 +368,54 @@ class CryptoShieldApp:
 
     def update_status(self, message):
         self.status_label.config(text=f"Status: {message}")
+    
+    def encrypt_file_with_progress(self):
+
+        if not self.selected_file:
+            messagebox.showerror("Error", "Select a file first!")
+            return
+
+        password = self.password_entry.get()
+        if not password:
+            messagebox.showerror("Error", "Enter password!")
+            return
+
+        try:
+            self.progress["value"] = 0
+            self.update_status("Encrypting...")
+
+            encryptor = Encryptor(password)
+
+        # simulate progress (until encryption class supports chunks)
+            for i in range(0, 101, 10):
+                self.progress["value"] = i
+                self.root.update_idletasks()
+                self.root.after(80)
+
+            encrypted_path = encryptor.encrypt_file(self.selected_file)
+
+            hasher = Hasher()
+            file_hash = hasher.generate_hash(encrypted_path)
+
+            manager = FileManager()
+
+            record = FileRecord(
+                original_file=self.selected_file,
+                encrypted_file=encrypted_path,
+                file_hash=file_hash,
+                time=str(datetime.now())
+            )
+
+            manager.save_record(record)
+
+            self.progress["value"] = 100
+            self.update_status("Encryption completed")
+
+            messagebox.showinfo("Success", f"Encrypted to:\n{encrypted_path}")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
 
 
 def run_app():
