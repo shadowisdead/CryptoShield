@@ -31,7 +31,15 @@ class FileManager:
 
         with open(DATA_FILE, "w") as f:
             json.dump(records, f, indent=4)
-
+    
+    def to_dict(self):
+        return {
+            "original_file": self.original_file,
+            "encrypted_file": self.encrypted_file,
+            "file_hash": self.file_hash,  # <- now consistent with GUI
+            "time": self.time
+        }
+    
     def get_all_records(self):
 
         try:
