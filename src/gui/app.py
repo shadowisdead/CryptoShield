@@ -8,8 +8,6 @@ from core.file_manager import FileManager, FileRecord
 from datetime import datetime
 import os 
 import re 
-import threading
-
 class CryptoShieldApp:
     def __init__(self, root):
         self.root = root
@@ -116,7 +114,7 @@ class CryptoShieldApp:
             text="Encrypt File",
             width=20,
             height=2,
-            command=self.start_encryption_thread
+            command=self.encrypt_with_progress
         ).grid(row=0, column=0, padx=15, pady=10)
 
         tk.Button(
@@ -124,7 +122,7 @@ class CryptoShieldApp:
             text="Decrypt File",
             width=20,
             height=2,
-            command=self.decrypt_file
+            command=self.decrypt_with_progress
         ).grid(row=0, column=1, padx=15, pady=10)
 
         tk.Button(
@@ -168,10 +166,19 @@ class CryptoShieldApp:
         )
         self.progress.pack(pady=20)
         
-    def start_encryption_thread(self):
-        thread = threading.Thread(target=self.encrypt_file_with_progress)
-        thread.daemon=True
-        thread.start()
+    def encrypt_with_progress(self):
+        self.run_with_progress(
+            self.perform_encryption,
+            "Encrypting file...",
+            "Encryption completed"
+        )
+       
+    def decrypt_with_progress(self):
+        self.run_with_progress(
+            self.perform_decryption,
+            "Decrypting file...",
+            "Decryption completed"
+        )
 
     def check_password_strength(self, password):
         score = 0
@@ -369,10 +376,34 @@ class CryptoShieldApp:
     def update_status(self, message):
         self.status_label.config(text=f"Status: {message}")
     
-    def encrypt_file_with_progress(self):
+    def run_with_progress(self, task_function, start_msg, end_msg):
+
+        def task():
+            try:
+                self.progress["value"] = 0
+                self.update_status(start_msg)
+
+                for i in range(0, 101, 10):
+                    self.progress["value"] = i
+                    self.root.update_idletasks()
+                    self.root.after(60)
+
+                result = task_function()
+
+                self.progress["value"] = 100
+                self.update_status(end_msg)
+
+                return result
+
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
+
+        threading.Thread(target=task, daemon=True).start()
+
+    def perform_encryption(self):
 
         if not self.selected_file:
-            messagebox.showerror("Error", "Select a file first!")
+            messagebox.showerror("Error", "Select file first!")
             return
 
         password = self.password_entry.get()
@@ -380,41 +411,39 @@ class CryptoShieldApp:
             messagebox.showerror("Error", "Enter password!")
             return
 
-        try:
-            self.progress["value"] = 0
-            self.update_status("Encrypting...")
+        encryptor = Encryptor(password)
+        encrypted_path = encryptor.encrypt_file(self.selected_file)
 
-            encryptor = Encryptor(password)
+        hasher = Hasher()
+        file_hash = hasher.generate_hash(encrypted_path)
 
-        # simulate progress (until encryption class supports chunks)
-            for i in range(0, 101, 10):
-                self.progress["value"] = i
-                self.root.update_idletasks()
-                self.root.after(80)
+        manager = FileManager()
 
-            encrypted_path = encryptor.encrypt_file(self.selected_file)
+        record = FileRecord(
+            original_file=self.selected_file,
+            encrypted_file=encrypted_path,
+            file_hash=file_hash,
+            time=str(datetime.now())
+        )
 
-            hasher = Hasher()
-            file_hash = hasher.generate_hash(encrypted_path)
+        manager.save_record(record)
 
-            manager = FileManager()
+        messagebox.showinfo("Success", f"Encrypted to:\n{encrypted_path}")
+    def perform_decryption(self):
 
-            record = FileRecord(
-                original_file=self.selected_file,
-                encrypted_file=encrypted_path,
-                file_hash=file_hash,
-                time=str(datetime.now())
-            )
+        if not self.selected_file:
+            messagebox.showerror("Error", "Select file first!")
+            return
 
-            manager.save_record(record)
+        password = self.password_entry.get()
+        if not password:
+            messagebox.showerror("Error", "Enter password!")
+            return
 
-            self.progress["value"] = 100
-            self.update_status("Encryption completed")
+        decryptor = Decryptor(password)
+        decrypted_path = decryptor.decrypt_file(self.selected_file)
 
-            messagebox.showinfo("Success", f"Encrypted to:\n{encrypted_path}")
-
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
+        messagebox.showinfo("Success", f"Decrypted to:\n{decrypted_path}")
 
 
 
