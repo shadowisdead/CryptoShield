@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from encryption.encryptor import Encryptor
 from encryption.decryptor import Decryptor
+from integrity.hasher import Hasher
+
 import os
 
 class CryptoShieldApp:
@@ -197,8 +199,22 @@ class CryptoShieldApp:
         if not self.selected_file:
             messagebox.showerror("Error", "Please select a file first!")
             return
-        self.update_status("Integrity check will be added next")
 
+        try:
+            hasher = Hasher()
+            file_hash = hasher.generate_hash(self.selected_file)
+
+            messagebox.showinfo(
+                "Integrity Hash",
+                f"SHA-256 Hash:\n{file_hash}"
+            )
+
+            self.update_status("Hash generated successfully")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+    
+        
     def update_status(self, message):
         self.status_label.config(text=f"Status: {message}")
 
