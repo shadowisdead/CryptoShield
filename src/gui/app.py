@@ -7,6 +7,7 @@ from integrity.hasher import Hasher
 from core.file_manager import FileManager, FileRecord
 from datetime import datetime
 import os 
+import re 
 
 class CryptoShieldApp:
     def __init__(self, root):
@@ -88,6 +89,15 @@ class CryptoShieldApp:
             font=("Arial", 12)
         )
         self.password_entry.pack(pady=10)
+        self.password_entry.bind("<KeyRelease>", self.update_password_strength)
+
+        self.password_strength_label = tk.Label(
+            pass_frame,
+            text="Password Strength: ",
+            font=("Arial", 10),
+            fg="black"
+        )
+        self.password_strength_label.pack(pady=5)
 
         action_frame = tk.LabelFrame(
             self.root,
@@ -140,6 +150,26 @@ class CryptoShieldApp:
         )
         self.status_label.pack(fill="x", side="bottom")
 
+    def check_password_strength(self, password):
+        score = 0
+
+        if len(password) >= 8:
+            score += 1
+        if re.search(r"[A-Z]", password):
+            score += 1
+        if re.search(r"[a-z]", password):
+            score += 1
+        if re.search(r"\d", password):
+            score += 1
+        if re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+            score += 1
+
+        if score <= 2:
+            return "Weak password, Please use a strong password!", "red"
+        elif score <= 4:
+            return "Medium", "orange"
+        else:
+            return "Strong", "green"
     # ---------------- FUNCTIONS ----------------
 
     def select_file(self):
@@ -267,6 +297,21 @@ class CryptoShieldApp:
 
         tree.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+
+    def update_password_strength(self, event=None):
+        password = self.password_entry.get()
+        if password:
+            strength, color = self.check_password_strength(password)
+            self.password_strength_label.config(
+                text=f"Password Strength: {strength}",
+                fg=color
+            )
+        else:
+            self.password_strength_label.config(
+                text="Password Strength: ",
+                fg="black"
+            )
+
 
     def update_status(self, message):
         self.status_label.config(text=f"Status: {message}")
