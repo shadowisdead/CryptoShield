@@ -8,6 +8,7 @@ from core.file_manager import FileManager, FileRecord
 from datetime import datetime
 import os 
 import re 
+import threading
 class CryptoShieldApp:
     def __init__(self, root):
         self.root = root
