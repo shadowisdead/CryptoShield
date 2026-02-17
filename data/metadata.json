@@ -1,14 +1,46 @@
 [
-    {
-        "original_file": "programming_assessment.pdf",
-        "encrypted_file": "programming_assessment.pdf.enc",
-        "file_hash": "ca822503792ad819be24ba0703b4b784ff032e5fcd356c09ba2e79e244bd12c9",
-        "time": "2026-02-04 12:08:16.399866"
-    },
-    {
-        "original_file": "C:/Users/LENOVO/Downloads/programming_assessment.pdf",
-        "encrypted_file": "C:/Users/LENOVO/Downloads/programming_assessment.pdf.enc",
-        "file_hash": "a8de9145b70b7499119379a60668b43ca5be9202d9111007b6efd539bed2c687",
-        "time": "2026-02-04 12:27:06.199070"
-    }
+  {
+    "original_file": "programming_assessment.pdf",
+    "encrypted_file": "programming_assessment.pdf.enc",
+    "file_hash": "ca822503792ad819be24ba0703b4b784ff032e5fcd356c09ba2e79e244bd12c9",
+    "time": "2026-02-04 12:08:16.399866"
+  },
+  {
+    "original_file": "C:/Users/LENOVO/Downloads/programming_assessment.pdf",
+    "encrypted_file": "C:/Users/LENOVO/Downloads/programming_assessment.pdf.enc",
+    "file_hash": "a8de9145b70b7499119379a60668b43ca5be9202d9111007b6efd539bed2c687",
+    "time": "2026-02-04 12:27:06.199070"
+  },
+  {
+    "original_file": "C:/Users/LENOVO/Downloads/9397fcbc5ff7473edd9cb1e25e50dc23.jpg",
+    "encrypted_file": "C:/Users/LENOVO/Downloads/9397fcbc5ff7473edd9cb1e25e50dc23.jpg.enc",
+    "file_hash": "2d80bb8bd9d860a32feabc6ee15a2431ae5a3b2265243c0fd54c8d6c6788bcad",
+    "time": "2026-02-12 00:12:13.965496",
+    "algorithm": "AES-256",
+    "file_size": 0
+  },
+  {
+    "original_file": "C:/Users/LENOVO/Downloads/600c3fc4571ab32ecb59f767eebb55f8.jpg",
+    "encrypted_file": "C:/Users/LENOVO/Downloads/600c3fc4571ab32ecb59f767eebb55f8.jpg.enc",
+    "file_hash": "e0b5c0c1ce1a74cef4ef7c5a7261fdd44acc0284993ecc94629f92dd4c52cd9a",
+    "time": "2026-02-12 00:13:53.205785",
+    "algorithm": "ChaCha20",
+    "file_size": 0
+  },
+  {
+    "original_file": "C:/Users/LENOVO/Downloads/with encryption.png",
+    "encrypted_file": "C:/Users/LENOVO/Downloads/with encryption.png.enc",
+    "file_hash": "8616e0e1bacfa83f765f15435f48987c88b6cd3891df34d0ea3f1fb17b622dee",
+    "time": "2026-02-16 08:23:03.112267",
+    "algorithm": "ChaCha20",
+    "file_size": 845116
+  },
+  {
+    "original_file": "C:/Users/LENOVO/OneDrive/Desktop/anush_dai_assignment",
+    "encrypted_file": "C:/Users/LENOVO/OneDrive/Desktop\\anush_dai_assignment.csh",
+    "file_hash": "98c3833f4ec02ee6bb7fc50459e1a76a2f7b7e82344f5ade77bcfb56d80f1e7b",
+    "time": "2026-02-17 05:37:45.525123",
+    "algorithm": "AES-256",
+    "file_size": 5777623
+  }
 ]

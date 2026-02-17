@@ -6,13 +6,16 @@ Requires RSA keypair generation (user provides or we generate).
 import os
 from typing import Callable, Optional
 
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM #type: ignore
-from cryptography.hazmat.primitives.asymmetric import rsa, padding as asym_padding #type: ignore
-from cryptography.hazmat.primitives import serialization, hashes #type: ignore
-from cryptography.hazmat.backends import default_backend #type: ignore
+from cryptography.hazmat.primitives.asymmetric import rsa, padding as asym_padding  # type: ignore
+from cryptography.hazmat.primitives import serialization, hashes  # type: ignore
+from cryptography.hazmat.backends import default_backend  # type: ignore
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes  # type: ignore
 
+from core.logger import get_logger
 from core.secure_delete import secure_delete
 from .base import EncryptionAlgorithm
+
+CHUNK_SIZE = 65536  # 64KB, aligned with AES engine
 
 
 class RSAEngine(EncryptionAlgorithm):
@@ -40,6 +43,7 @@ class RSAEngine(EncryptionAlgorithm):
         self.private_key_path = private_key_path
         self._public_key = None
         self._private_key = None
+        self._logger = get_logger()
 
         if public_key_path and os.path.exists(public_key_path):
             with open(public_key_path, "rb") as f:
@@ -109,15 +113,8 @@ class RSAEngine(EncryptionAlgorithm):
 
         session_key = os.urandom(32)
         nonce = os.urandom(12)
-        aesgcm = AESGCM(session_key)
 
-        with open(file_path, "rb") as f:
-            data = f.read()
-
-        total = len(data)
-        self._report_progress(progress_callback, total // 2, total)
-        encrypted_data = aesgcm.encrypt(nonce, data, None)
-        self._report_progress(progress_callback, total, total)
+        total = os.path.getsize(file_path)
 
         # Encrypt session key with RSA
         encrypted_key = self._public_key.encrypt(
@@ -130,15 +127,35 @@ class RSAEngine(EncryptionAlgorithm):
         )
 
         out = output_path or (file_path + ".enc")
-        with open(out, "wb") as f:
-            f.write(bytes([self.VERSION, self.ALGO_ID]))
-            f.write(len(encrypted_key).to_bytes(2, "big"))
-            f.write(encrypted_key)
-            f.write(encrypted_data)
+
+        cipher = Cipher(algorithms.AES(session_key), modes.GCM(nonce), backend=default_backend())
+        encryptor = cipher.encryptor()
+
+        written = 0
+        with open(file_path, "rb") as src, open(out, "wb") as dst:
+            dst.write(bytes([self.VERSION, self.ALGO_ID]))
+            dst.write(len(encrypted_key).to_bytes(2, "big"))
+            dst.write(encrypted_key)
+
+            while True:
+                chunk = src.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                ct = encryptor.update(chunk)
+                if ct:
+                    dst.write(ct)
+                written += len(chunk)
+                self._report_progress(progress_callback, written, total)
+
+            final_ct = encryptor.finalize()
+            if final_ct:
+                dst.write(final_ct)
+            dst.write(encryptor.tag)
 
         if delete_original:
             secure_delete(file_path)
 
+        self._logger.info("Encrypted file '%s' with RSA hybrid", file_path)
         return out
 
     def decrypt_file(
@@ -150,19 +167,25 @@ class RSAEngine(EncryptionAlgorithm):
         if not self._private_key:
             raise ValueError("RSA private key required for decryption.")
 
-        with open(file_path, "rb") as f:
-            raw = f.read()
-
-        if len(raw) < 4:
+        total = os.path.getsize(file_path)
+        if total < 4:
             raise ValueError("Invalid RSA encrypted file")
 
-        ver, algo = raw[0], raw[1]
-        if ver != 1 or algo != self.ALGO_ID:
-            raise ValueError("File was not encrypted with RSA hybrid")
+        with open(file_path, "rb") as src:
+            header = src.read(2)
+            if len(header) != 2:
+                raise ValueError("Invalid RSA encrypted file")
+            ver, algo = header[0], header[1]
+            if ver != 1 or algo != self.ALGO_ID:
+                raise ValueError("File was not encrypted with RSA hybrid")
 
-        key_len = int.from_bytes(raw[2:4], "big")
-        encrypted_key = raw[4 : 4 + key_len]
-        encrypted_data = raw[4 + key_len :]
+            key_len_bytes = src.read(2)
+            if len(key_len_bytes) != 2:
+                raise ValueError("Invalid RSA encrypted file (missing key length)")
+            key_len = int.from_bytes(key_len_bytes, "big")
+            encrypted_key = src.read(key_len)
+            if len(encrypted_key) != key_len:
+                raise ValueError("Invalid RSA encrypted file (truncated key)")
 
         session_key_nonce = self._private_key.decrypt(
             encrypted_key,
@@ -175,20 +198,54 @@ class RSAEngine(EncryptionAlgorithm):
         session_key = session_key_nonce[:32]
         nonce = session_key_nonce[32:44]
 
-        aesgcm = AESGCM(session_key)
-        data = aesgcm.decrypt(nonce, encrypted_data, None)
+        header_len = 2 + 2 + key_len
+        tag_len = 16
+        ciphertext_len = total - header_len - tag_len
+        if ciphertext_len < 0:
+            raise ValueError("Invalid RSA encrypted file (ciphertext too short)")
 
-        total = len(raw)
-        self._report_progress(progress_callback, total, total)
+        # Read tag, set up decryptor, then stream ciphertext.
+        with open(file_path, "rb") as src2:
+            src2.seek(total - tag_len)
+            tag = src2.read(tag_len)
+            if len(tag) != tag_len:
+                raise ValueError("Invalid RSA encrypted file (missing tag)")
 
-        if output_path is None:
-            if file_path.endswith(".enc"):
-                output_path = file_path[:-4] + "_decrypted"
-            else:
-                output_path = file_path + "_decrypted"
+            cipher = Cipher(algorithms.AES(session_key), modes.GCM(nonce, tag), backend=default_backend())
+            decryptor = cipher.decryptor()
 
-        with open(output_path, "wb") as f:
-            f.write(data)
+            if output_path is None:
+                if file_path.endswith(".enc"):
+                    output_path = file_path[:-4] + "_decrypted"
+                else:
+                    output_path = file_path + "_decrypted"
+
+            src2.seek(header_len)
+            read_bytes = 0
+            with open(output_path, "wb") as dst:
+                while read_bytes < ciphertext_len:
+                    to_read = min(CHUNK_SIZE, ciphertext_len - read_bytes)
+                    chunk = src2.read(to_read)
+                    if not chunk:
+                        break
+                    pt = decryptor.update(chunk)
+                    if pt:
+                        dst.write(pt)
+                    read_bytes += len(chunk)
+                    self._report_progress(progress_callback, read_bytes, total)
+
+                try:
+                    final_pt = decryptor.finalize()
+                except Exception:
+                    self._logger.error(
+                        "Failed to decrypt '%s' with RSA hybrid (authentication error)",
+                        file_path,
+                    )
+                    raise
+                if final_pt:
+                    dst.write(final_pt)
+
+        self._logger.info("Decrypted file '%s' with RSA hybrid", file_path)
         return output_path
 
     @property

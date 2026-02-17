@@ -15,9 +15,12 @@ except Exception:
     HAS_WATCHDOG = False
     start_folder_watch = stop_folder_watch = None
 from datetime import datetime
+import math
 import os
 import re
+import tempfile
 import threading
+import zipfile
 
 # ----------------------------- CATPPUCCIN MOCHA THEME (Arch Rice Aesthetic) -----------------------------
 class Theme:
@@ -71,6 +74,7 @@ class CryptoShieldApp:
         self._clipboard_clear_id = None
         self._folder_observer = None
         self._backup_folder = ""
+        self._action_buttons = []
         self._setup_root()
         self.setup_ui()
 
@@ -259,6 +263,7 @@ class CryptoShieldApp:
         btns = [
             ("Encrypt", self._encrypt_with_progress, self.theme["blue"], "Encrypt selected file(s) with password"),
             ("Decrypt", self._decrypt_with_progress, self.theme["green"], "Decrypt selected encrypted file(s)"),
+            ("Folder Archive", self._encrypt_folder_archive, self.theme["blue"], "Encrypt an entire folder into a single .csh archive"),
             ("Verify Hash", self._verify_file, self.theme["peach"], "Generate SHA-256 hash of selected file"),
             ("History", self._show_history, self.theme["subtext"], "View encrypted file history and export"),
             ("Check Tamper", self._check_file_tamper, self.theme["red"], "Verify if encrypted file has been modified"),
@@ -268,6 +273,7 @@ class CryptoShieldApp:
             btn = self._styled_btn(self._actions_frame, text, cmd, color)
             btn.grid(row=i // 3, column=i % 3, padx=10, pady=8)
             ToolTip(btn, tip)
+            self._action_buttons.append(btn)
 
     # ---------------- STATUS BAR (terminal prompt style) ----------------
     def _build_status_bar(self):
@@ -297,6 +303,36 @@ class CryptoShieldApp:
         self._progress.pack(fill="x", pady=2)
         self._progress_label = tk.Label(self._prog_frame, text="", font=(FONT_MONO[0], 9), bg=self.theme["bg"], fg=self.theme["subtext"])
         self._progress_label.pack(anchor="e")
+
+    def _set_busy_state(self, busy: bool) -> None:
+        """Enable/disable primary controls while a background task is running."""
+        state = "disabled" if busy else "normal"
+        widgets = [
+            self._file_btn,
+            self._folder_btn,
+            self._preview_btn,
+            self._gen_pass_btn,
+            self._theme_btn,
+        ] + list(self._action_buttons)
+        for w in widgets:
+            try:
+                w.configure(state=state)
+            except Exception:
+                pass
+        try:
+            self.root.configure(cursor="watch" if busy else "")
+        except Exception:
+            pass
+
+    # ---------------- MESSAGE HELPERS (thread-safe) ----------------
+    def _show_error(self, title: str, message: str) -> None:
+        self.root.after(0, lambda: messagebox.showerror(title, message))
+
+    def _show_info(self, title: str, message: str) -> None:
+        self.root.after(0, lambda: messagebox.showinfo(title, message))
+
+    def _show_warning(self, title: str, message: str) -> None:
+        self.root.after(0, lambda: messagebox.showwarning(title, message))
 
     # ---------------- STYLED BUTTON ----------------
     def _styled_btn(self, parent, text, command, color):
@@ -329,21 +365,82 @@ class CryptoShieldApp:
 
     # ---------------- PASSWORD STRENGTH ----------------
     def _check_password_strength(self, password):
-        score = 0
-        if len(password) >= 8: score += 1
-        if re.search(r"[A-Z]", password): score += 1
-        if re.search(r"[a-z]", password): score += 1
-        if re.search(r"\d", password): score += 1
-        if re.search(r"[!@#$%^&*(),.?\":{}|<>]", password): score += 1
-        if score <= 2: return "weak", self.theme["red"]
-        elif score <= 4: return "medium", self.theme["peach"]
-        else: return "strong", self.theme["green"]
+        length = len(password)
+        has_upper = bool(re.search(r"[A-Z]", password))
+        has_lower = bool(re.search(r"[a-z]", password))
+        has_digit = bool(re.search(r"\d", password))
+        has_symbol = bool(re.search(r"[!@#$%^&*(),.?\":{}|<>]", password))
+
+        pool = 0
+        if has_upper:
+            pool += 26
+        if has_lower:
+            pool += 26
+        if has_digit:
+            pool += 10
+        if has_symbol:
+            pool += 32
+
+        entropy = 0.0
+        if pool > 0 and length:
+            entropy = length * math.log2(pool)
+
+        policy_ok = length >= 12 and has_upper and has_lower and has_digit and has_symbol
+
+        if entropy < 40:
+            strength = "Weak"
+            color = self.theme["red"]
+        elif entropy < 60:
+            strength = "Medium"
+            color = self.theme["peach"]
+        elif entropy < 80:
+            strength = "Strong"
+            color = self.theme["green"]
+        else:
+            strength = "Very Strong"
+            color = self.theme["green"]
+
+        try:
+            guesses = 2 ** entropy
+            seconds = guesses / 1e10
+        except OverflowError:
+            seconds = float("inf")
+        crack_time = self._format_crack_time(seconds)
+
+        return strength, color, entropy, crack_time, policy_ok
+
+    def _format_crack_time(self, seconds: float) -> str:
+        if seconds < 1:
+            return "< 1 second"
+        if seconds < 60:
+            return f"{int(seconds)} seconds"
+        minutes = seconds / 60
+        if minutes < 60:
+            return f"{int(minutes)} minutes"
+        hours = minutes / 60
+        if hours < 24:
+            return f"{int(hours)} hours"
+        days = hours / 24
+        if days < 365:
+            return f"{int(days)} days"
+        years = days / 365
+        if years < 100:
+            return f"{int(years)} years"
+        return "> 100 years"
+
+    def _password_policy_ok(self, password: str) -> bool:
+        _, _, _, _, ok = self._check_password_strength(password)
+        return ok
 
     def _update_password_strength(self, event=None):
         pwd = self._pass_entry.get()
         if pwd:
-            strength, color = self._check_password_strength(pwd)
-            self._pass_strength.config(text=f"Strength: {strength}", fg=color)
+            strength, color, entropy, crack_time, ok = self._check_password_strength(pwd)
+            policy_note = "policy OK" if ok else "too weak for encryption"
+            self._pass_strength.config(
+                text=f"Strength: {strength} — {entropy:.1f} bits, est. crack: {crack_time} ({policy_note})",
+                fg=color,
+            )
         else:
             self._pass_strength.config(text="")
 
@@ -389,7 +486,7 @@ class CryptoShieldApp:
                 self._update_file_label()
                 self._update_status(f"{len(self.selected_files)} file(s) total")
             else:
-                messagebox.showinfo("Info", "No files found in folder.")
+                self._show_info("Info", "No files found in folder.")
 
     def _update_file_label(self):
         if not self.selected_files:
@@ -405,10 +502,10 @@ class CryptoShieldApp:
     def _preview_file(self):
         path = self.selected_files[0] if self.selected_files else None
         if not path or not os.path.isfile(path):
-            messagebox.showinfo("Info", "Select a file first.")
+            self._show_info("Info", "Select a file first.")
             return
         if not (can_preview_text(path) or can_preview_image(path)):
-            messagebox.showinfo("Info", "Preview not available for this file type.")
+            self._show_info("Info", "Preview not available for this file type.")
             return
         create_preview_window(self.root, path, self.theme)
 
@@ -419,28 +516,53 @@ class CryptoShieldApp:
         self._run_with_progress(self._perform_encryption, "Encrypting...", "Encryption complete")
 
     def _decrypt_with_progress(self):
-        self._run_with_progress(self._perform_decryption, "Decrypting...", "Decryption complete")
+        files = [f for f in self.selected_files if os.path.isfile(f)]
+        archive_target = None
+        if len(files) == 1 and files[0].lower().endswith(".csh"):
+            archive_target = filedialog.askdirectory(title="Select folder to extract archive into")
+            if not archive_target:
+                return
+
+            def task(progress_cb, dest=archive_target):
+                self._perform_decryption(progress_cb, archive_target=dest)
+
+            self._run_with_progress(task, "Decrypting archive...", "Archive decrypted")
+        else:
+            self._run_with_progress(self._perform_decryption, "Decrypting...", "Decryption complete")
 
     def _run_with_progress(self, task_fn, start_msg, end_msg):
+        def update_progress(done: int, total: int) -> None:
+            def _ui():
+                pct = int(100 * done / total) if total else 0
+                self._progress["value"] = pct
+                self._progress_label.config(text=f"{pct}%")
+            self.root.after(0, _ui)
+
+        def on_start():
+            self._set_busy_state(True)
+            self._progress["value"] = 0
+            self._progress_label.config(text="0%")
+            self._update_status(start_msg)
+
+        def on_success():
+            self._progress["value"] = 100
+            self._progress_label.config(text="100%")
+            self._update_status(end_msg)
+            self._notify_desktop(end_msg)
+            self._set_busy_state(False)
+
+        def on_error(msg: str):
+            self._set_busy_state(False)
+            messagebox.showerror("Error", msg)
+
         def run():
             try:
-                self._progress["value"] = 0
-                self._progress_label.config(text="0%")
-                self._update_status(start_msg)
-
-                def update_progress(done: int, total: int):
-                    pct = int(100 * done / total) if total else 0
-                    self._progress["value"] = pct
-                    self._progress_label.config(text=f"{pct}%")
-                    self.root.update_idletasks()
-
+                self.root.after(0, on_start)
                 task_fn(update_progress)
-                self._progress["value"] = 100
-                self._progress_label.config(text="100%")
-                self._update_status(end_msg)
-                self._notify_desktop(end_msg)
+                self.root.after(0, on_success)
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                self.root.after(0, lambda: on_error(str(e)))
+
         threading.Thread(target=run, daemon=True).start()
 
     def _notify_desktop(self, msg: str):
@@ -453,15 +575,21 @@ class CryptoShieldApp:
     def _perform_encryption(self, progress_cb):
         files = [f for f in self.selected_files if os.path.isfile(f)]
         if not files:
-            messagebox.showerror("Error", "Select at least one file.")
+            self._show_error("Error", "Select at least one file.")
             return
         pwd = self._pass_entry.get()
         if not pwd:
-            messagebox.showerror("Error", "Enter a password.")
+            self._show_error("Error", "Enter a password.")
+            return
+        if not self._password_policy_ok(pwd):
+            self._show_error(
+                "Weak password",
+                "Password is too weak. Use at least 12 characters and include uppercase, lowercase, number and symbol.",
+            )
             return
         algo_name = self._algo_var.get()
         if algo_name == "RSA":
-            messagebox.showinfo("Info", "RSA mode: Use RSA key files. Generate keys first.")
+            self._show_info("Info", "RSA mode: Use RSA key files. Generate keys first.")
             return
         Engine = get_algorithm(algo_name)
         engine = Engine(pwd)
@@ -477,26 +605,28 @@ class CryptoShieldApp:
                 record = FileRecord(original_file=fp, encrypted_file=enc_path, file_hash=fh, time=str(datetime.now()), algorithm=algo_name, file_size=sz)
                 manager.save_record(record)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed: {fp}\n{e}")
+                self._show_error("Error", f"Failed: {fp}\n{e}")
                 return
             if total > 1:
                 progress_cb(i + 1, total)
-                self.root.update_idletasks()
         msg = f"Encrypted {len(files)} file(s)." if total > 1 else f"Encrypted to:\n{files[0]}.enc"
-        messagebox.showinfo("Success", msg)
+        self._show_info("Success", msg)
 
-    def _perform_decryption(self, progress_cb):
+    def _perform_decryption(self, progress_cb, archive_target: str | None = None):
         files = [f for f in self.selected_files if os.path.isfile(f)]
         if not files:
-            messagebox.showerror("Error", "Select at least one file.")
+            self._show_error("Error", "Select at least one file.")
             return
         pwd = self._pass_entry.get()
         if not pwd:
-            messagebox.showerror("Error", "Enter a password.")
+            self._show_error("Error", "Enter a password.")
             return
         algo_name = self._algo_var.get()
         if algo_name == "RSA":
-            messagebox.showinfo("Info", "RSA mode: Load private key for decryption.")
+            self._show_info("Info", "RSA mode: Load private key for decryption.")
+            return
+        if archive_target and len(files) == 1 and files[0].lower().endswith(".csh"):
+            self._perform_archive_decryption(files[0], pwd, algo_name, archive_target, progress_cb)
             return
         Engine = get_algorithm(algo_name)
         engine = Engine(pwd)
@@ -507,36 +637,138 @@ class CryptoShieldApp:
                 dec_path = engine.decrypt_file(fp, progress_callback=cb)
                 if total > 1:
                     progress_cb(i + 1, total)
-                messagebox.showinfo("Success", f"Decrypted to:\n{dec_path}")
+                self._show_info("Success", f"Decrypted to:\n{dec_path}")
                 break
             except Exception as e:
                 try:
                     decryptor = Decryptor(pwd)
                     dec_path = decryptor.decrypt_file(fp)
-                    messagebox.showinfo("Success", f"Decrypted to:\n{dec_path}")
+                    self._show_info("Success", f"Decrypted to:\n{dec_path}")
                     break
                 except Exception as e2:
-                    messagebox.showerror("Error", str(e2))
+                    self._show_error("Error", str(e2))
                     return
+
+    def _encrypt_folder_archive(self):
+        folder = filedialog.askdirectory(title="Select folder to encrypt as archive")
+        if not folder:
+            return
+        pwd = self._pass_entry.get()
+        if not pwd:
+            self._show_error("Error", "Enter a password before encrypting a folder archive.")
+            return
+        if not self._password_policy_ok(pwd):
+            self._show_error(
+                "Weak password",
+                "Password is too weak. Use at least 12 characters and include uppercase, lowercase, number and symbol.",
+            )
+            return
+        algo_name = self._algo_var.get()
+        if algo_name == "RSA":
+            self._show_info("Info", "Folder archive mode is not supported with RSA in this version.")
+            return
+
+        def task(progress_cb, folder_path=folder, algo=algo_name, password=pwd):
+            self._perform_archive_encryption(folder_path, password, algo, progress_cb)
+
+        self._run_with_progress(task, "Encrypting folder archive...", "Folder archive encrypted")
+
+    def _perform_archive_encryption(self, folder_path: str, password: str, algo_name: str, progress_cb):
+        if not os.path.isdir(folder_path):
+            raise ValueError("Folder not found.")
+
+        tmp_fd, tmp_zip_path = tempfile.mkstemp(suffix=".zip")
+        os.close(tmp_fd)
+        try:
+            with zipfile.ZipFile(tmp_zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                for root, _, files in os.walk(folder_path):
+                    for name in files:
+                        full = os.path.join(root, name)
+                        if not os.path.isfile(full):
+                            continue
+                        rel = os.path.relpath(full, start=folder_path)
+                        zf.write(full, arcname=rel)
+
+            Engine = get_algorithm(algo_name)
+            engine = Engine(password)
+
+            parent = os.path.dirname(folder_path)
+            base = os.path.basename(os.path.normpath(folder_path))
+            candidate = os.path.join(parent, base + ".csh")
+            idx = 1
+            while os.path.exists(candidate):
+                candidate = os.path.join(parent, f"{base}_{idx}.csh")
+                idx += 1
+
+            enc_path = engine.encrypt_file(tmp_zip_path, output_path=candidate, progress_callback=progress_cb)
+            hasher = Hasher()
+            manager = FileManager()
+            fh = hasher.generate_hash(enc_path)
+            sz = os.path.getsize(enc_path) if os.path.exists(enc_path) else 0
+            record = FileRecord(
+                original_file=folder_path,
+                encrypted_file=enc_path,
+                file_hash=fh,
+                time=str(datetime.now()),
+                algorithm=algo_name,
+                file_size=sz,
+            )
+            manager.save_record(record)
+            self._show_info("Success", f"Encrypted folder to archive:\n{enc_path}")
+        finally:
+            try:
+                os.remove(tmp_zip_path)
+            except OSError:
+                pass
+
+    def _perform_archive_decryption(
+        self,
+        enc_path: str,
+        password: str,
+        algo_name: str,
+        target_dir: str,
+        progress_cb,
+    ) -> None:
+        if not os.path.isfile(enc_path):
+            raise ValueError("Encrypted archive not found.")
+        if not os.path.isdir(target_dir):
+            os.makedirs(target_dir, exist_ok=True)
+
+        tmp_fd, tmp_zip_path = tempfile.mkstemp(suffix=".zip")
+        os.close(tmp_fd)
+        try:
+            Engine = get_algorithm(algo_name)
+            engine = Engine(password)
+            engine.decrypt_file(enc_path, output_path=tmp_zip_path, progress_callback=progress_cb)
+
+            with zipfile.ZipFile(tmp_zip_path, "r") as zf:
+                zf.extractall(target_dir)
+
+            self._show_info("Success", f"Archive decrypted to:\n{target_dir}")
+        finally:
+            try:
+                os.remove(tmp_zip_path)
+            except OSError:
+                pass
 
     # ---------------- INTEGRITY & TAMPER ----------------
     def _verify_file(self):
         path = self.selected_files[0] if self.selected_files else None
         if not path or not os.path.isfile(path):
-            messagebox.showerror("Error", "Select a file first.")
+            self._show_error("Error", "Select a file first.")
             return
         hasher = Hasher()
         file_hash = hasher.generate_hash(path)
         self.root.clipboard_clear()
         self.root.clipboard_append(file_hash)
         self._schedule_clipboard_clear(10)
-        messagebox.showinfo("SHA-256 Hash", f"{file_hash}\n(Copied to clipboard, will clear in 10s)")
+        self._show_info("SHA-256 Hash", f"{file_hash}\n(Copied to clipboard, will clear in 10s)")
         self._update_status("Hash generated")
 
     def _check_file_tamper(self):
         path = self.selected_files[0] if self.selected_files else None
         if not path or not os.path.isfile(path):
-            messagebox.showerror("Error", "Select a file first.")
+            self._show_error("Error", "Select a file first.")
             return
         manager = FileManager()
         records = manager.get_all_records()
@@ -544,15 +776,15 @@ class CryptoShieldApp:
         sel_basename = os.path.basename(path)
         record = next((r for r in records if os.path.normpath(r.get("encrypted_file", "")) == sel_norm or os.path.basename(r.get("encrypted_file", "")) == sel_basename), None)
         if not record:
-            messagebox.showinfo("Info", "No metadata found for this file.")
+            self._show_info("Info", "No metadata found for this file.")
             return
         hasher = Hasher()
         current_hash = hasher.generate_hash(path)
         if current_hash == record.get("file_hash"):
-            messagebox.showinfo("Safe", "No tampering detected.")
+            self._show_info("Safe", "No tampering detected.")
             self._update_status("Integrity verified")
         else:
-            messagebox.showwarning("Tampered", "File has been tampered.")
+            self._show_warning("Tampered", "File has been tampered.")
             self._update_status("Tampering detected")
 
     # ---------------- HISTORY WINDOW (styled, search, export) ----------------
@@ -618,9 +850,9 @@ class CryptoShieldApp:
         else:
             ok = manager.export_excel(path, records)
             if not ok:
-                messagebox.showerror("Error", "Install openpyxl: pip install openpyxl")
+                self._show_error("Error", "Install openpyxl: pip install openpyxl")
                 return
-        messagebox.showinfo("Success", f"Exported to {path}")
+        self._show_info("Success", f"Exported to {path}")
 
     # ---------------- STATUS ----------------
     def _update_status(self, msg):
@@ -628,7 +860,7 @@ class CryptoShieldApp:
 
     def _toggle_watch_folder(self):
         if not HAS_WATCHDOG or not start_folder_watch:
-            messagebox.showinfo("Info", "Install watchdog: pip install watchdog")
+            self._show_info("Info", "Install watchdog: pip install watchdog")
             return
         if self._folder_observer:
             stop_folder_watch(self._folder_observer)
@@ -640,7 +872,13 @@ class CryptoShieldApp:
             return
         pwd = self._pass_entry.get()
         if not pwd:
-            messagebox.showwarning("Warning", "Set a password first. New files will be encrypted with it.")
+            self._show_warning("Warning", "Set a password first. New files will be encrypted with it.")
+            return
+        if not self._password_policy_ok(pwd):
+            self._show_warning(
+                "Weak password",
+                "Password is too weak. Use at least 12 characters and include uppercase, lowercase, number and symbol.",
+            )
             return
         def on_new(path):
             self.root.after(0, lambda: self._encrypt_file_path(path))
@@ -650,6 +888,9 @@ class CryptoShieldApp:
     def _encrypt_file_path(self, path: str):
         pwd = self._pass_entry.get()
         if not pwd or not os.path.isfile(path):
+            return
+        if not self._password_policy_ok(pwd):
+            self._update_status("Auto-encrypt skipped (weak password)")
             return
         try:
             Engine = get_algorithm(self._algo_var.get())

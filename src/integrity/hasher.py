@@ -1,8 +1,10 @@
 import hashlib
 
+from core.logger import get_logger
+
 class Hasher:
     def __init__(self):
-        pass
+        self._logger = get_logger()
 
     def generate_hash(self, file_path: str) -> str:
         """
@@ -26,4 +28,12 @@ class Hasher:
         """
 
         current_hash = self.generate_hash(file_path)
-        return current_hash == original_hash
+        ok = current_hash == original_hash
+        if not ok:
+            self._logger.warning(
+                "Integrity verification failed for '%s' (expected %s, got %s)",
+                file_path,
+                original_hash,
+                current_hash,
+            )
+        return ok

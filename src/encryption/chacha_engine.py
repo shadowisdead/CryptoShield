@@ -1,16 +1,20 @@
 """
 ChaCha20-Poly1305 encryption engine (password-based).
+
+Note: cryptography's ChaCha20Poly1305 API is single-shot (non-streaming).
+We keep the authenticated one-shot design for integrity; for very large files,
+prefer the AES-256 engine which supports true streaming I/O.
 """
 
 import os
 from typing import Callable, Optional
 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC #type: ignore
-
+from core.logger import get_logger
 from core.secure_delete import secure_delete
-from cryptography.hazmat.primitives import hashes #type: ignore
-from cryptography.hazmat.backends import default_backend #type: ignore
-from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305 #type: ignore
+from cryptography.hazmat.primitives import hashes  # type: ignore
+from cryptography.hazmat.backends import default_backend  # type: ignore
+from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305  # type: ignore
 
 from .base import EncryptionAlgorithm
 
@@ -24,6 +28,7 @@ class ChaChaEngine(EncryptionAlgorithm):
     def __init__(self, password: str):
         self.password = password.encode("utf-8")
         self.backend = default_backend()
+        self._logger = get_logger()
 
     def _derive_key(self, salt: bytes) -> bytes:
         kdf = PBKDF2HMAC(
@@ -71,6 +76,7 @@ class ChaChaEngine(EncryptionAlgorithm):
         if delete_original:
             secure_delete(file_path)
 
+        self._logger.info("Encrypted file '%s' with ChaCha20", file_path)
         return out
 
     def decrypt_file(
@@ -95,7 +101,13 @@ class ChaChaEngine(EncryptionAlgorithm):
 
         key = self._derive_key(salt)
         chacha = ChaCha20Poly1305(key)
-        data = chacha.decrypt(nonce, ciphertext, None)
+        try:
+            data = chacha.decrypt(nonce, ciphertext, None)
+        except Exception:
+            # Authentication failure, typically due to wrong password.
+            logger = self._logger
+            logger.error("Failed to decrypt '%s' with ChaCha20 (authentication error)", file_path)
+            raise
 
         total = len(raw)
         self._report_progress(progress_callback, total, total)
@@ -108,6 +120,7 @@ class ChaChaEngine(EncryptionAlgorithm):
 
         with open(output_path, "wb") as f:
             f.write(data)
+        self._logger.info("Decrypted file '%s' with ChaCha20", file_path)
         return output_path
 
     @property

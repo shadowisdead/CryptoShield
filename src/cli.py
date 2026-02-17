@@ -11,6 +11,8 @@ import argparse
 import os
 import sys
 
+from core.logger import get_logger
+
 # Ensure src is on path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -22,14 +24,23 @@ def cmd_encrypt(args):
     Engine = get_algorithm(args.algorithm)
     engine = Engine(args.password)
     out = engine.encrypt_file(args.file, delete_original=args.secure_delete)
+    logger = get_logger()
+    logger.info("CLI encrypted '%s' → '%s' using %s", args.file, out, args.algorithm)
     print(f"Encrypted: {out}")
 
 
 def cmd_decrypt(args):
     Engine = get_algorithm(args.algorithm)
     engine = Engine(args.password)
-    out = engine.decrypt_file(args.file)
-    print(f"Decrypted: {out}")
+    logger = get_logger()
+    try:
+        out = engine.decrypt_file(args.file)
+    except Exception as exc:
+        logger.error("CLI failed to decrypt '%s' using %s: %s", args.file, args.algorithm, exc)
+        raise
+    else:
+        logger.info("CLI decrypted '%s' → '%s' using %s", args.file, out, args.algorithm)
+        print(f"Decrypted: {out}")
 
 
 def cmd_hash(args):

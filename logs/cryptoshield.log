@@ -1,0 +1,7 @@
+[2026-02-12 00:12:13,950] [INFO] Encrypted file 'C:/Users/LENOVO/Downloads/9397fcbc5ff7473edd9cb1e25e50dc23.jpg' with AES-256
+[2026-02-12 00:13:53,183] [INFO] Encrypted file 'C:/Users/LENOVO/Downloads/600c3fc4571ab32ecb59f767eebb55f8.jpg' with ChaCha20
+[2026-02-16 08:23:03,090] [INFO] Encrypted file 'C:/Users/LENOVO/Downloads/with encryption.png' with ChaCha20
+[2026-02-17 05:37:45,494] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpdfh4rltw.zip' with AES-256
+[2026-02-17 05:38:16,741] [INFO] Started folder watcher on 'C:/Users/LENOVO/Downloads/table_tennis_day2'
+[2026-02-17 05:38:19,398] [INFO] Stopped folder watcher
+[2026-02-17 05:38:30,021] [INFO] Started folder watcher on 'C:/Users/LENOVO/Downloads/table_tennis_day2'
