@@ -5,3 +5,8 @@
 [2026-02-17 05:38:16,741] [INFO] Started folder watcher on 'C:/Users/LENOVO/Downloads/table_tennis_day2'
 [2026-02-17 05:38:19,398] [INFO] Stopped folder watcher
 [2026-02-17 05:38:30,021] [INFO] Started folder watcher on 'C:/Users/LENOVO/Downloads/table_tennis_day2'
+[2026-02-18 05:57:58,418] [INFO] Encrypted file 'C:/Users/LENOVO/Downloads/with encryption.png' with RSA hybrid
+[2026-02-18 06:05:04,052] [INFO] Encrypted file 'src/main.py' with AES-256
+[2026-02-18 06:05:04,052] [INFO] CLI encrypted 'src/main.py' → 'src/main.py.enc' using AES-256
+[2026-02-18 06:05:09,237] [INFO] Decrypted file 'src/main.py.enc' with AES-256
+[2026-02-18 06:05:09,237] [INFO] CLI decrypted 'src/main.py.enc' → 'src/main.py_decrypted' using AES-256

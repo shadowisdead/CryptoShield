@@ -19,6 +19,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from encryption.algorithms import get_algorithm
 from integrity.hasher import Hasher
 
+from main import APP_VERSION
+
 
 def cmd_encrypt(args):
     Engine = get_algorithm(args.algorithm)
@@ -56,6 +58,7 @@ def cmd_verify(args):
 
 
 def main():
+    print(f"CryptoShield v{APP_VERSION}")
     parser = argparse.ArgumentParser(description="CryptoShield CLI")
     sub = parser.add_subparsers(dest="command", required=True)
 

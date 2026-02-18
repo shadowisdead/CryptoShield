@@ -16,6 +16,24 @@ from core.secure_delete import secure_delete
 from .base import EncryptionAlgorithm
 
 CHUNK_SIZE = 65536  # 64KB, aligned with AES engine
+DEFAULT_KEY_DIR = os.path.join(os.getcwd(), "data", "keys")
+DEFAULT_PUBLIC_KEY = os.path.join(DEFAULT_KEY_DIR, "public_key.pem")
+DEFAULT_PRIVATE_KEY = os.path.join(DEFAULT_KEY_DIR, "private_key.pem")
+
+
+def generate_rsa_keys(key_dir: Optional[str] = None) -> tuple[str, str]:
+    """
+    Generate 4096-bit RSA keypair.
+    Saves to data/keys/public_key.pem and data/keys/private_key.pem by default.
+    Returns (public_path, private_path).
+    """
+    base_dir = key_dir or DEFAULT_KEY_DIR
+    os.makedirs(base_dir, exist_ok=True)
+    public_path = os.path.join(base_dir, "public_key.pem")
+    private_path = os.path.join(base_dir, "private_key.pem")
+    return RSAEngine.generate_keypair(
+        public_path, private_path, password=None, key_size=4096
+    )
 
 
 class RSAEngine(EncryptionAlgorithm):
@@ -26,7 +44,7 @@ class RSAEngine(EncryptionAlgorithm):
 
     VERSION = 1
     ALGO_ID = 3
-    RSA_KEY_SIZE = 2048
+    RSA_KEY_SIZE = 4096
 
     def __init__(
         self,
@@ -35,23 +53,26 @@ class RSAEngine(EncryptionAlgorithm):
         private_key_path: Optional[str] = None,
     ):
         """
-        For encryption: provide public_key_path (or password to derive from stored key).
-        For decryption: provide private_key_path + password (if key is encrypted).
+        For encryption: loads public key from public_key_path or data/keys/public_key.pem.
+        For decryption: loads private key from private_key_path or data/keys/private_key.pem.
+        Password is only used when private key is encrypted (not the case for generated keys).
         """
-        self.password = (password or "").encode("utf-8")
-        self.public_key_path = public_key_path
-        self.private_key_path = private_key_path
+        self.password = (password or b"") if isinstance(password, bytes) else (password or "").encode("utf-8")
+        pub_path = public_key_path or DEFAULT_PUBLIC_KEY
+        priv_path = private_key_path or DEFAULT_PRIVATE_KEY
+        self.public_key_path = pub_path
+        self.private_key_path = priv_path
         self._public_key = None
         self._private_key = None
         self._logger = get_logger()
 
-        if public_key_path and os.path.exists(public_key_path):
-            with open(public_key_path, "rb") as f:
+        if os.path.exists(pub_path):
+            with open(pub_path, "rb") as f:
                 self._public_key = serialization.load_pem_public_key(f.read(), backend=default_backend())
-        if private_key_path and os.path.exists(private_key_path):
-            with open(private_key_path, "rb") as f:
+        if os.path.exists(priv_path):
+            with open(priv_path, "rb") as f:
                 pem = f.read()
-            if self.password:
+            if self.password and len(self.password) > 0:
                 self._private_key = serialization.load_pem_private_key(
                     pem, password=self.password, backend=default_backend()
                 )
@@ -65,11 +86,12 @@ class RSAEngine(EncryptionAlgorithm):
         public_path: str,
         private_path: str,
         password: Optional[str] = None,
+        key_size: int = 4096,
     ) -> tuple[str, str]:
         """Generate RSA keypair and save to files. Returns (public_path, private_path)."""
         private_key = rsa.generate_private_key(
             public_exponent=65537,
-            key_size=RSAEngine.RSA_KEY_SIZE,
+            key_size=key_size,
             backend=default_backend(),
         )
         public_key = private_key.public_key()

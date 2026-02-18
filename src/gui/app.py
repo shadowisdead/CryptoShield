@@ -1,13 +1,18 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-from encryption.encryptor import Encryptor
 from encryption.decryptor import Decryptor
 from encryption.algorithms import get_algorithm, ALGORITHMS
+from encryption.rsa_engine import generate_rsa_keys, DEFAULT_PUBLIC_KEY, DEFAULT_PRIVATE_KEY
 from integrity.hasher import Hasher
 from core.file_manager import FileManager, FileRecord
 from core.keygen import generate_random_password
 from .tooltip import ToolTip
 from .preview import create_preview_window, can_preview_text, can_preview_image
+
+try:
+    from main import APP_VERSION
+except ImportError:
+    APP_VERSION = "1.0.0"
 
 try:
     from core.folder_watcher import start_folder_watch, stop_folder_watch, HAS_WATCHDOG
@@ -66,12 +71,13 @@ FONT_UI = ("Segoe UI Variable", "Segoe UI", "SF Pro Display", "sans-serif")
 class CryptoShieldApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("CryptoShield — Secure Encryption")
+        self.root.title(f"CryptoShield v{APP_VERSION}")
         self.root.geometry("1000x720")
         self.root.minsize(900, 650)
         self.selected_files = []
         self.theme = Theme.DARK
         self._clipboard_clear_id = None
+        self._generated_password = ""
         self._folder_observer = None
         self._backup_folder = ""
         self._action_buttons = []
@@ -87,11 +93,13 @@ class CryptoShieldApp:
     # ---------------- UI SETUP ----------------
     def setup_ui(self):
         self._configure_ttk_styles()
+        self._build_menu()
         self._build_header()
         self._build_main_content()
         self._build_action_grid()
         self._build_status_bar()
         self._build_progress_section()
+        self._build_security_notice()
 
     def _configure_ttk_styles(self):
         style = ttk.Style()
@@ -132,6 +140,31 @@ class CryptoShieldApp:
             foreground=[("selected", self.theme["bg"])],
         )
 
+    def _build_menu(self):
+        """Build Help menu with About dialog."""
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=self._show_about)
+
+    def _show_about(self):
+        """Display About dialog with application info."""
+        win = tk.Toplevel(self.root)
+        win.title("About CryptoShield")
+        win.geometry("380x320")
+        win.configure(bg=self.theme["bg"])
+        win.resizable(False, False)
+        win.transient(self.root)
+        win.grab_set()
+        tk.Label(win, text="CryptoShield", font=(FONT_MONO[0], 18, "bold"), bg=self.theme["bg"], fg=self.theme["text"]).pack(pady=(24, 4))
+        tk.Label(win, text=f"Version {APP_VERSION}", font=(FONT_UI[0], 10), bg=self.theme["bg"], fg=self.theme["subtext"]).pack(pady=(0, 16))
+        tk.Label(win, text="Encryption Algorithms:", font=(FONT_UI[0], 10, "bold"), bg=self.theme["bg"], fg=self.theme["subtext"]).pack(anchor="w", padx=24, pady=(0, 4))
+        tk.Label(win, text="  • AES-256-GCM\n  • ChaCha20-Poly1305\n  • RSA-4096 Hybrid", font=(FONT_UI[0], 9), bg=self.theme["bg"], fg=self.theme["text"], justify="left").pack(anchor="w", padx=24, pady=(0, 12))
+        tk.Label(win, text="Educational cryptography desktop application.", font=(FONT_UI[0], 9), bg=self.theme["bg"], fg=self.theme["text"], wraplength=320).pack(pady=8)
+        tk.Label(win, text="Educational use only — not security audited.", font=(FONT_UI[0], 9), bg=self.theme["bg"], fg=self.theme["red"]).pack(pady=(8, 20))
+        tk.Button(win, text="OK", command=win.destroy, bg=self.theme["blue"], fg=self.theme["bg"], relief="flat", font=(FONT_MONO[0], 10), padx=24, pady=6).pack(pady=(0, 16))
+
     # ---------------- HEADER (minimal rice style) ----------------
     def _build_header(self):
         self._header_frame = tk.Frame(self.root, bg=self.theme["bg"], height=90)
@@ -165,7 +198,7 @@ class CryptoShieldApp:
         self._file_card.grid(row=0, column=0, padx=(0, 15), pady=5, sticky="nsew")
         tk.Label(
             self._file_card,
-            text="FILE",
+            text="STEP 1 — File Selection",
             font=(FONT_MONO[0], 10, "bold"),
             bg=self.theme["card"],
             fg=self.theme["subtext"],
@@ -197,7 +230,7 @@ class CryptoShieldApp:
         self._pass_card.grid(row=0, column=1, padx=(15, 0), pady=5, sticky="nsew")
         tk.Label(
             self._pass_card,
-            text="SECURITY",
+            text="STEP 2 — Security Setup",
             font=(FONT_MONO[0], 10, "bold"),
             bg=self.theme["card"],
             fg=self.theme["subtext"],
@@ -214,6 +247,7 @@ class CryptoShieldApp:
         self._pass_entry = tk.Entry(
             self._pass_entry_frame,
             show="●",
+            exportselection=0,
             font=(FONT_MONO[0], 11),
             bg=self.theme["bg_alt"],
             fg=self.theme["text"],
@@ -232,48 +266,71 @@ class CryptoShieldApp:
         )
         self._pass_strength.pack(anchor="w", padx=20, pady=(0, 8))
         opt_row = tk.Frame(self._pass_card, bg=self.theme["card"])
-        opt_row.pack(anchor="w", padx=20, pady=(0, 20))
-        self._gen_pass_btn = self._styled_btn(opt_row, "Generate", self._generate_password, self.theme["teal"])
+        opt_row.pack(anchor="w", padx=20, pady=(0, 8))
+        self._gen_pass_btn = self._styled_btn(opt_row, "Generate Password", self._generate_password, self.theme["teal"])
         self._gen_pass_btn.pack(side="left", padx=(0, 8))
-        self._theme_btn = self._styled_btn(opt_row, "Toggle Theme", self._toggle_theme, self.theme["mauve"])
-        self._theme_btn.pack(side="left")
         ToolTip(self._gen_pass_btn, "Generate a secure random password")
         self._algo_var = tk.StringVar(value="AES-256")
         algo_frame = tk.Frame(self._pass_card, bg=self.theme["card"])
         algo_frame.pack(anchor="w", padx=20, pady=(0, 8))
         tk.Label(algo_frame, text="Algorithm:", bg=self.theme["card"], fg=self.theme["subtext"], font=(FONT_UI[0], 9)).pack(side="left", padx=(0, 8))
-        ttk.Combobox(algo_frame, textvariable=self._algo_var, values=list(ALGORITHMS.keys()), state="readonly", width=12).pack(side="left")
+        self._algo_combo = ttk.Combobox(algo_frame, textvariable=self._algo_var, values=list(ALGORITHMS.keys()), state="readonly", width=12)
+        self._algo_combo.pack(side="left")
+        self._algo_var.trace_add("write", lambda *a: self._on_algo_changed())
+        self._rsa_keys_btn = self._styled_btn(opt_row, "Generate RSA Keys", self._generate_rsa_keys, self.theme["lavender"])
+        ToolTip(self._rsa_keys_btn, "Generate 4096-bit RSA keypair for hybrid encryption")
         self._secure_delete_var = tk.BooleanVar(value=False)
         sd_cb = tk.Checkbutton(self._pass_card, text="Secure delete original", variable=self._secure_delete_var, bg=self.theme["card"], fg=self.theme["subtext"], selectcolor=self.theme["bg_alt"], activebackground=self.theme["card"], activeforeground=self.theme["text"])
-        sd_cb.pack(anchor="w", padx=20, pady=(0, 4))
+        sd_cb.pack(anchor="w", padx=20, pady=(0, 20))
         ToolTip(sd_cb, "Overwrite file with random data before deletion after encryption")
+        self._on_algo_changed()
 
     def _create_card(self, parent, tag):
         f = tk.Frame(parent, bg=self.theme["card"], highlightbackground=self.theme["border"], highlightthickness=1)
         return f
 
-    # ---------------- ACTION BUTTONS ----------------
+    # ---------------- ACTION BUTTONS (workflow: Step 3 Actions, Step 4 Utilities) ----------------
     def _build_action_grid(self):
         self._actions_frame = tk.Frame(self.root, bg=self.theme["bg"])
         self._actions_frame.pack(pady=(10, 20))
         self._actions_frame.columnconfigure(0, weight=1)
         self._actions_frame.columnconfigure(1, weight=1)
-        self._actions_frame.columnconfigure(2, weight=1)
 
-        btns = [
-            ("Encrypt", self._encrypt_with_progress, self.theme["blue"], "Encrypt selected file(s) with password"),
+        self._step3_frame = tk.Frame(self._actions_frame, bg=self.theme["bg"])
+        self._step3_frame.grid(row=0, column=0, columnspan=2, sticky="ew", padx=40, pady=(0, 8))
+        self._step3_label = tk.Label(self._step3_frame, text="STEP 3 — Actions", font=(FONT_MONO[0], 10, "bold"), bg=self.theme["bg"], fg=self.theme["subtext"])
+        self._step3_label.pack(anchor="w")
+        actions_row = tk.Frame(self._step3_frame, bg=self.theme["bg"])
+        actions_row.pack(anchor="w", pady=4)
+        action_btns = [
+            ("Encrypt", self._encrypt_with_progress, self.theme["blue"], "Encrypt selected file(s)"),
             ("Decrypt", self._decrypt_with_progress, self.theme["green"], "Decrypt selected encrypted file(s)"),
-            ("Folder Archive", self._encrypt_folder_archive, self.theme["blue"], "Encrypt an entire folder into a single .csh archive"),
-            ("Verify Hash", self._verify_file, self.theme["peach"], "Generate SHA-256 hash of selected file"),
-            ("History", self._show_history, self.theme["subtext"], "View encrypted file history and export"),
-            ("Check Tamper", self._check_file_tamper, self.theme["red"], "Verify if encrypted file has been modified"),
-            ("Watch Folder", self._toggle_watch_folder, self.theme["lavender"], "Auto-encrypt new files in a folder (requires watchdog)"),
+            ("Folder Archive", self._encrypt_folder_archive, self.theme["blue"], "Encrypt folder into .csh archive"),
+            ("Verify Hash", self._verify_file, self.theme["peach"], "Generate SHA-256 hash"),
+            ("Check Tamper", self._check_file_tamper, self.theme["red"], "Verify file integrity"),
         ]
-        for i, (text, cmd, color, tip) in enumerate(btns):
-            btn = self._styled_btn(self._actions_frame, text, cmd, color)
-            btn.grid(row=i // 3, column=i % 3, padx=10, pady=8)
+        for text, cmd, color, tip in action_btns:
+            btn = self._styled_btn(actions_row, text, cmd, color)
+            btn.pack(side="left", padx=(0, 8), pady=4)
             ToolTip(btn, tip)
             self._action_buttons.append(btn)
+
+        self._step4_frame = tk.Frame(self._actions_frame, bg=self.theme["bg"])
+        self._step4_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=40, pady=(8, 0))
+        self._step4_label = tk.Label(self._step4_frame, text="STEP 4 — Utilities", font=(FONT_MONO[0], 10, "bold"), bg=self.theme["bg"], fg=self.theme["subtext"])
+        self._step4_label.pack(anchor="w")
+        utils_row = tk.Frame(self._step4_frame, bg=self.theme["bg"])
+        utils_row.pack(anchor="w", pady=4)
+        self._history_btn = self._styled_btn(utils_row, "History", self._show_history, self.theme["subtext"])
+        self._history_btn.pack(side="left", padx=(0, 8))
+        ToolTip(self._history_btn, "View encrypted file history and export")
+        self._watch_btn = self._styled_btn(utils_row, "Watch Folder", self._toggle_watch_folder, self.theme["lavender"])
+        self._watch_btn.pack(side="left", padx=(0, 8))
+        ToolTip(self._watch_btn, "Auto-encrypt new files (requires watchdog)")
+        self._theme_btn = self._styled_btn(utils_row, "Toggle Theme", self._toggle_theme, self.theme["mauve"])
+        self._theme_btn.pack(side="left")
+        ToolTip(self._theme_btn, "Switch between dark and light theme")
+        self._action_buttons.extend([self._history_btn, self._watch_btn, self._theme_btn])
 
     # ---------------- STATUS BAR (terminal prompt style) ----------------
     def _build_status_bar(self):
@@ -290,6 +347,17 @@ class CryptoShieldApp:
         )
         self._status_label.pack(side="left", padx=20, pady=8, fill="x", expand=True)
 
+    def _build_security_notice(self):
+        """Add subtle security notice banner at bottom."""
+        self._security_notice = tk.Label(
+            self.root,
+            text="Educational Use Only — Not Security Audited",
+            font=(FONT_UI[0], 8),
+            bg=self.theme["bg"],
+            fg=self.theme["subtext"],
+        )
+        self._security_notice.pack(side="bottom", pady=(0, 2))
+
     def _build_progress_section(self):
         self._prog_frame = tk.Frame(self.root, bg=self.theme["bg"])
         self._prog_frame.pack(fill="x", padx=40, pady=(0, 15))
@@ -304,6 +372,28 @@ class CryptoShieldApp:
         self._progress_label = tk.Label(self._prog_frame, text="", font=(FONT_MONO[0], 9), bg=self.theme["bg"], fg=self.theme["subtext"])
         self._progress_label.pack(anchor="e")
 
+    def _rsa_keys_exist(self) -> bool:
+        """Check if RSA key files exist in data/keys/."""
+        return os.path.exists(DEFAULT_PUBLIC_KEY) and os.path.exists(DEFAULT_PRIVATE_KEY)
+
+    def _on_algo_changed(self):
+        """Show Generate RSA Keys button only when RSA is selected."""
+        try:
+            self._rsa_keys_btn.pack_forget()
+        except Exception:
+            pass
+        if self._algo_var.get() == "RSA":
+            self._rsa_keys_btn.pack(side="left", padx=(8, 0))
+
+    def _generate_rsa_keys(self):
+        """Generate 4096-bit RSA keypair and save to data/keys/."""
+        try:
+            pub_path, priv_path = generate_rsa_keys()
+            self._show_info("RSA Keys Generated", f"Keys saved to:\n{pub_path}\n{priv_path}")
+            self._update_status("RSA keys generated")
+        except Exception as e:
+            self._show_error("RSA Key Generation Failed", str(e))
+
     def _set_busy_state(self, busy: bool) -> None:
         """Enable/disable primary controls while a background task is running."""
         state = "disabled" if busy else "normal"
@@ -313,6 +403,7 @@ class CryptoShieldApp:
             self._preview_btn,
             self._gen_pass_btn,
             self._theme_btn,
+            self._rsa_keys_btn,
         ] + list(self._action_buttons)
         for w in widgets:
             try:
@@ -446,11 +537,12 @@ class CryptoShieldApp:
 
     def _generate_password(self):
         pwd = generate_random_password(20)
+        self._generated_password = pwd
         self._pass_entry.delete(0, tk.END)
         self._pass_entry.insert(0, pwd)
         self._update_password_strength()
         self.root.clipboard_clear()
-        self.root.clipboard_append(pwd)
+        self.root.clipboard_append(self._generated_password)
         self._schedule_clipboard_clear(10)
 
     def _schedule_clipboard_clear(self, seconds: int):
@@ -577,22 +669,24 @@ class CryptoShieldApp:
         if not files:
             self._show_error("Error", "Select at least one file.")
             return
-        pwd = self._pass_entry.get()
-        if not pwd:
-            self._show_error("Error", "Enter a password.")
-            return
-        if not self._password_policy_ok(pwd):
-            self._show_error(
-                "Weak password",
-                "Password is too weak. Use at least 12 characters and include uppercase, lowercase, number and symbol.",
-            )
-            return
         algo_name = self._algo_var.get()
         if algo_name == "RSA":
-            self._show_info("Info", "RSA mode: Use RSA key files. Generate keys first.")
-            return
-        Engine = get_algorithm(algo_name)
-        engine = Engine(pwd)
+            if not self._rsa_keys_exist():
+                self._show_error("RSA Keys Required", "Generate RSA keys first (Generate RSA Keys button).")
+                return
+            engine = get_algorithm(algo_name)(None)
+        else:
+            pwd = self._pass_entry.get()
+            if not pwd:
+                self._show_error("Error", "Enter a password.")
+                return
+            if not self._password_policy_ok(pwd):
+                self._show_error(
+                    "Weak password",
+                    "Password is too weak. Use at least 12 characters and include uppercase, lowercase, number and symbol.",
+                )
+                return
+            engine = get_algorithm(algo_name)(pwd)
         hasher = Hasher()
         manager = FileManager()
         total = len(files)
@@ -617,19 +711,22 @@ class CryptoShieldApp:
         if not files:
             self._show_error("Error", "Select at least one file.")
             return
-        pwd = self._pass_entry.get()
-        if not pwd:
-            self._show_error("Error", "Enter a password.")
-            return
         algo_name = self._algo_var.get()
         if algo_name == "RSA":
-            self._show_info("Info", "RSA mode: Load private key for decryption.")
-            return
+            if not self._rsa_keys_exist():
+                self._show_error("RSA Keys Required", "Private key not found. Generate RSA keys first.")
+                return
+            engine = get_algorithm(algo_name)(None)
+        else:
+            pwd = self._pass_entry.get()
+            if not pwd:
+                self._show_error("Error", "Enter a password.")
+                return
+            engine = get_algorithm(algo_name)(pwd)
         if archive_target and len(files) == 1 and files[0].lower().endswith(".csh"):
-            self._perform_archive_decryption(files[0], pwd, algo_name, archive_target, progress_cb)
+            pwd_arg = self._pass_entry.get() if algo_name != "RSA" else None
+            self._perform_archive_decryption(files[0], pwd_arg, algo_name, archive_target, progress_cb)
             return
-        Engine = get_algorithm(algo_name)
-        engine = Engine(pwd)
         total = len(files)
         for i, fp in enumerate(files):
             try:
@@ -640,8 +737,12 @@ class CryptoShieldApp:
                 self._show_info("Success", f"Decrypted to:\n{dec_path}")
                 break
             except Exception as e:
+                if algo_name == "RSA":
+                    self._show_error("Error", str(e))
+                    return
                 try:
-                    decryptor = Decryptor(pwd)
+                    pwd_fallback = self._pass_entry.get()
+                    decryptor = Decryptor(pwd_fallback)
                     dec_path = decryptor.decrypt_file(fp)
                     self._show_info("Success", f"Decrypted to:\n{dec_path}")
                     break
@@ -870,31 +971,46 @@ class CryptoShieldApp:
         folder = filedialog.askdirectory(title="Select folder to watch")
         if not folder:
             return
-        pwd = self._pass_entry.get()
-        if not pwd:
-            self._show_warning("Warning", "Set a password first. New files will be encrypted with it.")
-            return
-        if not self._password_policy_ok(pwd):
-            self._show_warning(
-                "Weak password",
-                "Password is too weak. Use at least 12 characters and include uppercase, lowercase, number and symbol.",
-            )
-            return
+        algo_name = self._algo_var.get()
+        if algo_name == "RSA":
+            if not self._rsa_keys_exist():
+                self._show_error("RSA Keys Required", "Generate RSA keys first for Watch Folder.")
+                return
+        else:
+            pwd = self._pass_entry.get()
+            if not pwd:
+                self._show_warning("Warning", "Set a password first. New files will be encrypted with it.")
+                return
+            if not self._password_policy_ok(pwd):
+                self._show_warning(
+                    "Weak password",
+                    "Password is too weak. Use at least 12 characters and include uppercase, lowercase, number and symbol.",
+                )
+                return
         def on_new(path):
             self.root.after(0, lambda: self._encrypt_file_path(path))
         self._folder_observer = start_folder_watch(folder, on_new)
         self._update_status(f"Watching: {folder}")
 
     def _encrypt_file_path(self, path: str):
-        pwd = self._pass_entry.get()
-        if not pwd or not os.path.isfile(path):
+        if not os.path.isfile(path):
             return
-        if not self._password_policy_ok(pwd):
-            self._update_status("Auto-encrypt skipped (weak password)")
-            return
+        algo_name = self._algo_var.get()
+        if algo_name == "RSA":
+            if not self._rsa_keys_exist():
+                self._update_status("Auto-encrypt skipped (RSA keys not found)")
+                return
+            engine = get_algorithm(algo_name)(None)
+        else:
+            pwd = self._pass_entry.get()
+            if not pwd:
+                self._update_status("Auto-encrypt skipped (no password)")
+                return
+            if not self._password_policy_ok(pwd):
+                self._update_status("Auto-encrypt skipped (weak password)")
+                return
+            engine = get_algorithm(algo_name)(pwd)
         try:
-            Engine = get_algorithm(self._algo_var.get())
-            engine = Engine(pwd)
             enc_path = engine.encrypt_file(path)
             manager = FileManager()
             hasher = Hasher()
@@ -917,6 +1033,13 @@ class CryptoShieldApp:
             children[1].configure(bg=self.theme["bg"], fg=self.theme["subtext"])
         self._content_frame.configure(bg=self.theme["bg"])
         self._actions_frame.configure(bg=self.theme["bg"])
+        self._step3_frame.configure(bg=self.theme["bg"])
+        self._step4_frame.configure(bg=self.theme["bg"])
+        self._step3_label.configure(bg=self.theme["bg"], fg=self.theme["subtext"])
+        self._step4_label.configure(bg=self.theme["bg"], fg=self.theme["subtext"])
+        for w in self._step3_frame.winfo_children() + self._step4_frame.winfo_children():
+            if isinstance(w, tk.Frame):
+                w.configure(bg=self.theme["bg"])
         self._prog_frame.configure(bg=self.theme["bg"])
         self._status_frame.configure(bg=self.theme["bg_alt"])
         self._status_label.configure(bg=self.theme["bg_alt"], fg=self.theme["subtext"])
@@ -938,6 +1061,7 @@ class CryptoShieldApp:
         self._gen_pass_btn.configure(bg=self.theme["teal"])
         self._theme_btn.configure(bg=self.theme["mauve"])
         self._progress_label.configure(bg=self.theme["bg"], fg=self.theme["subtext"])
+        self._security_notice.configure(bg=self.theme["bg"], fg=self.theme["subtext"])
 
 # ---------------- RUN ----------------
 def run_app():

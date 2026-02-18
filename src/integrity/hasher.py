@@ -1,15 +1,20 @@
+"""
+SHA-256 file hashing and integrity verification.
+"""
+
 import hashlib
 
 from core.logger import get_logger
 
+
 class Hasher:
+    """Generates and verifies SHA-256 hashes for file integrity checks."""
+
     def __init__(self):
         self._logger = get_logger()
 
     def generate_hash(self, file_path: str) -> str:
-        """
-        Generates SHA-256 hash of a file
-        """
+        """Generate SHA-256 hash of a file. Returns hex digest string."""
 
         sha256 = hashlib.sha256()
 
@@ -23,9 +28,7 @@ class Hasher:
         return sha256.hexdigest()
 
     def verify_hash(self, file_path: str, original_hash: str) -> bool:
-        """
-        Verifies file integrity by comparing hashes
-        """
+        """Verify file integrity by comparing current hash to expected (original_hash)."""
 
         current_hash = self.generate_hash(file_path)
         ok = current_hash == original_hash

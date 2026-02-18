@@ -42,5 +42,13 @@
     "time": "2026-02-17 05:37:45.525123",
     "algorithm": "AES-256",
     "file_size": 5777623
+  },
+  {
+    "original_file": "C:/Users/LENOVO/Downloads/with encryption.png",
+    "encrypted_file": "C:/Users/LENOVO/Downloads/with encryption.png.enc",
+    "file_hash": "530b0f200bbfc5fd4329231284ed965bdff203199ff13d49ba1299a380e72fbe",
+    "time": "2026-02-18 05:57:58.435318",
+    "algorithm": "RSA",
+    "file_size": 845116
   }
 ]
