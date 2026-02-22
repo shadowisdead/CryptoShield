@@ -10,3 +10,190 @@
 [2026-02-18 06:05:04,052] [INFO] CLI encrypted 'src/main.py' → 'src/main.py.enc' using AES-256
 [2026-02-18 06:05:09,237] [INFO] Decrypted file 'src/main.py.enc' with AES-256
 [2026-02-18 06:05:09,237] [INFO] CLI decrypted 'src/main.py.enc' → 'src/main.py_decrypted' using AES-256
+[2026-02-18 06:59:12,726] [WARNING] Integrity verification failed for 'C:\Users\LENOVO\AppData\Local\Temp\tmpcyw6e6dd\hash3.txt' (expected wrong, got ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad)
+[2026-02-18 06:59:13,201] [INFO] Encrypted file 'rsa.txt' with RSA hybrid
+[2026-02-18 06:59:13,223] [INFO] Decrypted file 'rsa.txt.enc' with RSA hybrid
+[2026-02-18 06:59:16,295] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp1afx2gx_\plain.bin' with RSA hybrid
+[2026-02-18 06:59:16,312] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp1afx2gx_\plain.bin.enc' with RSA hybrid
+[2026-02-18 06:59:18,085] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpvlia64fv\plain2.txt' with RSA hybrid
+[2026-02-18 06:59:18,103] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpvlia64fv\plain2.txt.enc' with RSA hybrid
+[2026-02-18 06:59:53,813] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 06:59:54,015] [INFO] Decrypted file 'aes_test.txt.enc' with AES-256
+[2026-02-18 06:59:54,200] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 06:59:54,397] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 06:59:54,622] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 06:59:54,850] [ERROR] Failed to decrypt 'aes_test.txt.enc' with AES-256 (authentication error)
+[2026-02-18 06:59:55,077] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 06:59:55,315] [ERROR] Failed to decrypt 'chacha.txt.enc' with ChaCha20 (authentication error)
+[2026-02-18 06:59:55,522] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 06:59:55,725] [INFO] Decrypted file 'chacha.txt.enc' with ChaCha20
+[2026-02-18 06:59:55,909] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 06:59:56,113] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp7qqli8m7\plain.txt' with AES-256
+[2026-02-18 06:59:56,318] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp7qqli8m7\plain.txt.enc' with AES-256
+[2026-02-18 06:59:56,557] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp35acpcaa\plain.txt' with ChaCha20
+[2026-02-18 06:59:56,792] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp35acpcaa\plain.txt.enc' with ChaCha20
+[2026-02-18 06:59:57,043] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpu56tpt8b\plain.txt' with AES-256
+[2026-02-18 06:59:57,267] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpu56tpt8b\plain.txt' with AES-256
+[2026-02-18 06:59:57,545] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpza4_96bz\plain.txt' with AES-256
+[2026-02-18 06:59:57,783] [ERROR] Failed to decrypt 'C:\Users\LENOVO\AppData\Local\Temp\tmpza4_96bz\plain.txt.enc' with AES-256 (authentication error)
+[2026-02-18 06:59:57,788] [INFO] Started folder watcher on 'C:\Users\LENOVO\AppData\Local\Temp\tmpoma6btcr'
+[2026-02-18 06:59:57,789] [INFO] Folder watcher detected new file 'C:\Users\LENOVO\AppData\Local\Temp\tmpoma6btcr\new_file.txt'
+[2026-02-18 06:59:58,292] [INFO] Stopped folder watcher
+[2026-02-18 06:59:58,292] [INFO] Stopped folder watcher
+[2026-02-18 06:59:58,949] [WARNING] Integrity verification failed for 'C:\Users\LENOVO\AppData\Local\Temp\tmp1j9fa1cc\hash3.txt' (expected wrong, got ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad)
+[2026-02-18 06:59:59,464] [INFO] Encrypted file 'rsa.txt' with RSA hybrid
+[2026-02-18 06:59:59,487] [INFO] Decrypted file 'rsa.txt.enc' with RSA hybrid
+[2026-02-18 12:45:01,368] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpg3jwj6co\plain.bin' with RSA hybrid
+[2026-02-18 12:45:01,387] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpg3jwj6co\plain.bin.enc' with RSA hybrid
+[2026-02-18 12:45:02,875] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp44rf38yu\plain2.txt' with RSA hybrid
+[2026-02-18 12:45:02,906] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp44rf38yu\plain2.txt.enc' with RSA hybrid
+[2026-02-18 12:45:55,280] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:45:55,495] [INFO] Decrypted file 'aes_test.txt.enc' with AES-256
+[2026-02-18 12:45:55,702] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:45:55,912] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:45:56,094] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:45:56,295] [ERROR] Failed to decrypt 'aes_test.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:45:56,479] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:45:56,692] [ERROR] Failed to decrypt 'chacha.txt.enc' with ChaCha20 (authentication error)
+[2026-02-18 12:45:56,896] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:45:57,102] [INFO] Decrypted file 'chacha.txt.enc' with ChaCha20
+[2026-02-18 12:45:57,291] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:45:57,475] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp1m2n5njp\plain.txt' with AES-256
+[2026-02-18 12:45:57,707] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp1m2n5njp\plain.txt.enc' with AES-256
+[2026-02-18 12:45:57,949] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp818jelrh\plain.txt' with ChaCha20
+[2026-02-18 12:45:58,180] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp818jelrh\plain.txt.enc' with ChaCha20
+[2026-02-18 12:45:58,407] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpmzaimh3q\plain.txt' with AES-256
+[2026-02-18 12:45:58,628] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpmzaimh3q\plain.txt' with AES-256
+[2026-02-18 12:45:58,886] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp0ctabj0t\plain.txt' with AES-256
+[2026-02-18 12:45:59,129] [ERROR] Failed to decrypt 'C:\Users\LENOVO\AppData\Local\Temp\tmp0ctabj0t\plain.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:45:59,135] [INFO] Started folder watcher on 'C:\Users\LENOVO\AppData\Local\Temp\tmpk7t50tm_'
+[2026-02-18 12:45:59,136] [INFO] Folder watcher detected new file 'C:\Users\LENOVO\AppData\Local\Temp\tmpk7t50tm_\new_file.txt'
+[2026-02-18 12:45:59,638] [INFO] Stopped folder watcher
+[2026-02-18 12:45:59,638] [INFO] Stopped folder watcher
+[2026-02-18 12:46:00,316] [WARNING] Integrity verification failed for 'C:\Users\LENOVO\AppData\Local\Temp\tmpkjf8w9y3\hash3.txt' (expected wrong, got ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad)
+[2026-02-18 12:46:00,839] [INFO] Encrypted file 'rsa.txt' with RSA hybrid
+[2026-02-18 12:46:00,868] [INFO] Decrypted file 'rsa.txt.enc' with RSA hybrid
+[2026-02-18 12:46:02,978] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp6bgfusxf\plain.bin' with RSA hybrid
+[2026-02-18 12:46:03,006] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp6bgfusxf\plain.bin.enc' with RSA hybrid
+[2026-02-18 12:46:04,301] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpzb3irj_m\plain2.txt' with RSA hybrid
+[2026-02-18 12:46:04,322] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpzb3irj_m\plain2.txt.enc' with RSA hybrid
+[2026-02-18 12:47:05,268] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:47:05,469] [INFO] Decrypted file 'aes_test.txt.enc' with AES-256
+[2026-02-18 12:47:05,672] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:47:05,886] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:47:06,066] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:47:06,265] [ERROR] Failed to decrypt 'aes_test.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:47:06,463] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:47:06,661] [ERROR] Failed to decrypt 'chacha.txt.enc' with ChaCha20 (authentication error)
+[2026-02-18 12:47:06,854] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:47:07,063] [INFO] Decrypted file 'chacha.txt.enc' with ChaCha20
+[2026-02-18 12:47:07,243] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:47:07,425] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpc561l6mq\plain.txt' with AES-256
+[2026-02-18 12:47:07,639] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpc561l6mq\plain.txt.enc' with AES-256
+[2026-02-18 12:47:07,832] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmppb4ynvtk\plain.txt' with ChaCha20
+[2026-02-18 12:47:08,020] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmppb4ynvtk\plain.txt.enc' with ChaCha20
+[2026-02-18 12:47:08,234] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpwxnlmqe_\plain.txt' with AES-256
+[2026-02-18 12:47:08,437] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpwxnlmqe_\plain.txt' with AES-256
+[2026-02-18 12:47:08,675] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp6lud8vwr\plain.txt' with AES-256
+[2026-02-18 12:47:08,896] [ERROR] Failed to decrypt 'C:\Users\LENOVO\AppData\Local\Temp\tmp6lud8vwr\plain.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:47:08,900] [INFO] Started folder watcher on 'C:\Users\LENOVO\AppData\Local\Temp\tmpb8ziapyu'
+[2026-02-18 12:47:08,901] [INFO] Folder watcher detected new file 'C:\Users\LENOVO\AppData\Local\Temp\tmpb8ziapyu\new_file.txt'
+[2026-02-18 12:47:09,403] [INFO] Stopped folder watcher
+[2026-02-18 12:47:09,403] [INFO] Stopped folder watcher
+[2026-02-18 12:47:09,963] [WARNING] Integrity verification failed for 'C:\Users\LENOVO\AppData\Local\Temp\tmp24b0fq6k\hash3.txt' (expected wrong, got ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad)
+[2026-02-18 12:47:10,427] [INFO] Encrypted file 'rsa.txt' with RSA hybrid
+[2026-02-18 12:47:10,449] [INFO] Decrypted file 'rsa.txt.enc' with RSA hybrid
+[2026-02-18 12:47:12,941] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpzpk9f48h\plain.bin' with RSA hybrid
+[2026-02-18 12:47:12,966] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpzpk9f48h\plain.bin.enc' with RSA hybrid
+[2026-02-18 12:47:16,001] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpmmxf2tvu\plain2.txt' with RSA hybrid
+[2026-02-18 12:47:16,019] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpmmxf2tvu\plain2.txt.enc' with RSA hybrid
+[2026-02-18 12:47:29,748] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:47:29,951] [INFO] Decrypted file 'aes_test.txt.enc' with AES-256
+[2026-02-18 12:47:30,140] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:47:30,376] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:47:30,548] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:47:30,750] [ERROR] Failed to decrypt 'aes_test.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:47:30,969] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:47:31,168] [ERROR] Failed to decrypt 'chacha.txt.enc' with ChaCha20 (authentication error)
+[2026-02-18 12:47:31,359] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:47:31,575] [INFO] Decrypted file 'chacha.txt.enc' with ChaCha20
+[2026-02-18 12:47:31,759] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:47:31,943] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmplz2yhpzp\plain.txt' with AES-256
+[2026-02-18 12:47:32,145] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmplz2yhpzp\plain.txt.enc' with AES-256
+[2026-02-18 12:47:32,330] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpss_zcoq6\plain.txt' with ChaCha20
+[2026-02-18 12:47:32,533] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpss_zcoq6\plain.txt.enc' with ChaCha20
+[2026-02-18 12:47:32,725] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmppsjuy649\plain.txt' with AES-256
+[2026-02-18 12:47:32,922] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmppsjuy649\plain.txt' with AES-256
+[2026-02-18 12:47:33,160] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpz3_v_2_p\plain.txt' with AES-256
+[2026-02-18 12:47:33,396] [ERROR] Failed to decrypt 'C:\Users\LENOVO\AppData\Local\Temp\tmpz3_v_2_p\plain.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:47:33,402] [INFO] Started folder watcher on 'C:\Users\LENOVO\AppData\Local\Temp\tmpwe5l6cty'
+[2026-02-18 12:47:33,402] [INFO] Folder watcher detected new file 'C:\Users\LENOVO\AppData\Local\Temp\tmpwe5l6cty\new_file.txt'
+[2026-02-18 12:47:33,904] [INFO] Stopped folder watcher
+[2026-02-18 12:47:33,904] [INFO] Stopped folder watcher
+[2026-02-18 12:47:34,449] [WARNING] Integrity verification failed for 'C:\Users\LENOVO\AppData\Local\Temp\tmp4h6as63m\hash3.txt' (expected wrong, got ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad)
+[2026-02-18 12:47:34,893] [INFO] Encrypted file 'rsa.txt' with RSA hybrid
+[2026-02-18 12:47:34,910] [INFO] Decrypted file 'rsa.txt.enc' with RSA hybrid
+[2026-02-18 12:47:37,688] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpl92wm_a0\plain.bin' with RSA hybrid
+[2026-02-18 12:47:37,713] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpl92wm_a0\plain.bin.enc' with RSA hybrid
+[2026-02-18 12:47:39,991] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpm3lolpm6\plain2.txt' with RSA hybrid
+[2026-02-18 12:47:40,020] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpm3lolpm6\plain2.txt.enc' with RSA hybrid
+[2026-02-18 12:48:17,534] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:48:17,766] [INFO] Decrypted file 'aes_test.txt.enc' with AES-256
+[2026-02-18 12:48:17,959] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:48:18,158] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:48:18,364] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:48:18,571] [ERROR] Failed to decrypt 'aes_test.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:48:18,754] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:48:19,015] [ERROR] Failed to decrypt 'chacha.txt.enc' with ChaCha20 (authentication error)
+[2026-02-18 12:48:19,212] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:48:19,408] [INFO] Decrypted file 'chacha.txt.enc' with ChaCha20
+[2026-02-18 12:48:19,592] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:48:19,775] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpijnh7njb\plain.txt' with AES-256
+[2026-02-18 12:48:19,983] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpijnh7njb\plain.txt.enc' with AES-256
+[2026-02-18 12:48:20,224] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpqxdv7zja\plain.txt' with ChaCha20
+[2026-02-18 12:48:20,457] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpqxdv7zja\plain.txt.enc' with ChaCha20
+[2026-02-18 12:48:20,650] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp37646g3j\plain.txt' with AES-256
+[2026-02-18 12:48:20,833] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp37646g3j\plain.txt' with AES-256
+[2026-02-18 12:48:21,067] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpksbcym2_\plain.txt' with AES-256
+[2026-02-18 12:48:21,289] [ERROR] Failed to decrypt 'C:\Users\LENOVO\AppData\Local\Temp\tmpksbcym2_\plain.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:48:21,293] [INFO] Started folder watcher on 'C:\Users\LENOVO\AppData\Local\Temp\tmp9xzovfiy'
+[2026-02-18 12:48:21,295] [INFO] Folder watcher detected new file 'C:\Users\LENOVO\AppData\Local\Temp\tmp9xzovfiy\new_file.txt'
+[2026-02-18 12:48:21,799] [INFO] Stopped folder watcher
+[2026-02-18 12:48:21,799] [INFO] Stopped folder watcher
+[2026-02-18 12:48:22,396] [WARNING] Integrity verification failed for 'C:\Users\LENOVO\AppData\Local\Temp\tmp3b44w5el\hash3.txt' (expected wrong, got ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad)
+[2026-02-18 12:48:22,860] [INFO] Encrypted file 'rsa.txt' with RSA hybrid
+[2026-02-18 12:48:22,882] [INFO] Decrypted file 'rsa.txt.enc' with RSA hybrid
+[2026-02-18 12:48:24,739] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmptvb0caf9\plain.bin' with RSA hybrid
+[2026-02-18 12:48:24,764] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmptvb0caf9\plain.bin.enc' with RSA hybrid
+[2026-02-18 12:48:26,106] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpqdprmo09\plain2.txt' with RSA hybrid
+[2026-02-18 12:48:26,125] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpqdprmo09\plain2.txt.enc' with RSA hybrid
+[2026-02-18 12:57:29,296] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:57:29,524] [INFO] Decrypted file 'aes_test.txt.enc' with AES-256
+[2026-02-18 12:57:29,724] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:57:29,935] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:57:30,135] [INFO] Encrypted file 'aes_test.txt' with AES-256
+[2026-02-18 12:57:30,357] [ERROR] Failed to decrypt 'aes_test.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:57:30,568] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:57:30,764] [ERROR] Failed to decrypt 'chacha.txt.enc' with ChaCha20 (authentication error)
+[2026-02-18 12:57:30,960] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:57:31,214] [INFO] Decrypted file 'chacha.txt.enc' with ChaCha20
+[2026-02-18 12:57:31,427] [INFO] Encrypted file 'chacha.txt' with ChaCha20
+[2026-02-18 12:57:31,613] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpdfjmqha0\plain.txt' with AES-256
+[2026-02-18 12:57:31,814] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpdfjmqha0\plain.txt.enc' with AES-256
+[2026-02-18 12:57:32,007] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmps_czei_2\plain.txt' with ChaCha20
+[2026-02-18 12:57:32,247] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmps_czei_2\plain.txt.enc' with ChaCha20
+[2026-02-18 12:57:32,425] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpj6ct891k\plain.txt' with AES-256
+[2026-02-18 12:57:32,608] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpj6ct891k\plain.txt' with AES-256
+[2026-02-18 12:57:32,834] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmpcywfqa1u\plain.txt' with AES-256
+[2026-02-18 12:57:33,052] [ERROR] Failed to decrypt 'C:\Users\LENOVO\AppData\Local\Temp\tmpcywfqa1u\plain.txt.enc' with AES-256 (authentication error)
+[2026-02-18 12:57:33,056] [INFO] Started folder watcher on 'C:\Users\LENOVO\AppData\Local\Temp\tmp7k_q3sgw'
+[2026-02-18 12:57:33,057] [INFO] Folder watcher detected new file 'C:\Users\LENOVO\AppData\Local\Temp\tmp7k_q3sgw\new_file.txt'
+[2026-02-18 12:57:33,558] [INFO] Stopped folder watcher
+[2026-02-18 12:57:33,559] [INFO] Stopped folder watcher
+[2026-02-18 12:57:34,087] [WARNING] Integrity verification failed for 'C:\Users\LENOVO\AppData\Local\Temp\tmpo7ylv62q\hash3.txt' (expected wrong, got ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad)
+[2026-02-18 12:57:34,506] [INFO] Encrypted file 'rsa.txt' with RSA hybrid
+[2026-02-18 12:57:34,525] [INFO] Decrypted file 'rsa.txt.enc' with RSA hybrid
+[2026-02-18 12:57:37,702] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmptv4si9on\plain.bin' with RSA hybrid
+[2026-02-18 12:57:37,722] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmptv4si9on\plain.bin.enc' with RSA hybrid
+[2026-02-18 12:57:38,578] [INFO] Encrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp4qt4upkv\plain2.txt' with RSA hybrid
+[2026-02-18 12:57:38,596] [INFO] Decrypted file 'C:\Users\LENOVO\AppData\Local\Temp\tmp4qt4upkv\plain2.txt.enc' with RSA hybrid

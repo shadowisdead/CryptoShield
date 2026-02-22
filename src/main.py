@@ -10,3 +10,4 @@ if __name__ == "__main__":
     else:
         from gui.app import run_app
         run_app()
+
